@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixr — Find Trusted Local Home Service Pros</title>
+    <meta name="description" content="Get matched with vetted local contractors for plumbing, electrical, HVAC, painting, and more. Free quotes in minutes. Spartanburg, SC and surrounding areas.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --orange: #C85A2A;
+            --orange-hover: #A34821;
+            --ink: #141210;
+            --cream: #F5F0E8;
+            --cream-dark: #EDE8DF;
+            --bg: #FAFAF8;
+            --border: #E0D9CE;
+            --muted: #8C867D;
+            --white: #ffffff;
+            --font-heading: 'Playfair Display', serif;
+            --font-body: 'DM Sans', sans-serif;
+            --transition: all 0.3s ease;
+            --navbar-h: 72px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--ink);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ── NAV ── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0;
+            height: var(--navbar-h);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 40px;
+            background: rgba(250, 250, 248, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+            transition: var(--transition);
+        }
+        .logo { font-family: var(--font-heading); font-size: 2rem; font-weight: 700; color: var(--ink); text-decoration: none; }
+        .logo .r { color: var(--orange); font-style: italic; }
+        .nav-links { display: flex; align-items: center; gap: 28px; }
+        .nav-link { font-size: 0.95rem; font-weight: 500; color: var(--ink); text-decoration: none; transition: color 0.2s; }
+        .nav-link:hover { color: var(--orange); }
+        .nav-btn {
+            padding: 10px 22px; background: var(--orange); color: #fff;
+            border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem;
+            transition: var(--transition);
+        }
+        .nav-btn:hover { background: var(--orange-hover); transform: translateY(-1px); }
+
+        /* ── HERO ── */
+        .hero {
+            min-height: 100vh;
+            display: flex; align-items: center;
+            background: var(--ink);
+            position: relative;
+            overflow: hidden;
+            padding-top: var(--navbar-h);
+        }
+        .hero-glow {
+            position: absolute; top: -20%; right: -10%;
+            width: 700px; height: 700px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(200,90,42,0.18) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-glow-2 {
+            position: absolute; bottom: -20%; left: -10%;
+            width: 500px; height: 500px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(200,90,42,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-content {
+            position: relative; z-index: 2;
+            max-width: 1100px; margin: 0 auto;
+            padding: 80px 40px;
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 80px; align-items: center;
+        }
+        .hero-text { color: var(--cream); }
+        .hero-eyebrow {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(200,90,42,0.15); border: 1px solid rgba(200,90,42,0.3);
+            padding: 6px 14px; border-radius: 100px;
+            font-size: 0.8rem; font-weight: 600; color: var(--orange);
+            text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 24px;
+        }
+        .hero h1 {
+            font-family: var(--font-heading);
+            font-size: 3.8rem; line-height: 1.1;
+            font-weight: 700; letter-spacing: -1px;
+            margin-bottom: 20px;
+        }
+        .hero h1 .accent { color: var(--orange); font-style: italic; }
+        .hero-sub {
+            font-size: 1.1rem; color: #A09B94; margin-bottom: 36px; line-height: 1.7;
+        }
+        .hero-trust {
+            display: flex; align-items: center; gap: 16px;
+            font-size: 0.85rem; color: #6E6862;
+        }
+        .trust-dot { width: 4px; height: 4px; background: #555; border-radius: 50%; }
+
+        /* Hero Quote Card */
+        .quote-card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 36px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .quote-card h3 {
+            font-family: var(--font-heading);
+            font-size: 1.4rem; margin-bottom: 6px;
+        }
+        .quote-card p { font-size: 0.9rem; color: var(--muted); margin-bottom: 28px; }
+
+        .form-field { margin-bottom: 16px; }
+        .form-field label {
+            display: block; font-size: 0.78rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--muted); margin-bottom: 6px;
+        }
+        .form-field select,
+        .form-field input {
+            width: 100%; padding: 13px 14px;
+            border: 1px solid var(--border); border-radius: 8px;
+            font-family: var(--font-body); font-size: 0.95rem;
+            background: #FAFAF8; color: var(--ink);
+            transition: var(--transition);
+        }
+        .form-field select:focus,
+        .form-field input:focus {
+            outline: none; border-color: var(--orange);
+            box-shadow: 0 0 0 3px rgba(200,90,42,0.1);
+        }
+        .quote-btn {
+            width: 100%; padding: 16px;
+            background: var(--orange); color: #fff;
+            border: none; border-radius: 8px;
+            font-family: var(--font-body); font-size: 1rem; font-weight: 700;
+            cursor: pointer; transition: var(--transition); margin-top: 8px;
+        }
+        .quote-btn:hover { background: var(--orange-hover); transform: translateY(-2px); }
+
+        /* ── SECTION LAYOUT ── */
+        .section { padding: 96px 40px; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        .section-label {
+            font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 2px; color: var(--orange); margin-bottom: 12px;
+        }
+        .section-title {
+            font-family: var(--font-heading); font-size: 2.8rem;
+            font-weight: 700; line-height: 1.2; margin-bottom: 16px;
+        }
+        .section-sub { font-size: 1.05rem; color: var(--muted); max-width: 560px; }
+
+        /* ── SERVICES ── */
+        .services { background: var(--white); }
+        .services-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 16px; margin-top: 48px;
+        }
+        .service-card {
+            background: var(--cream); border: 1px solid var(--border);
+            border-radius: 16px; padding: 28px 20px;
+            text-align: center; cursor: pointer;
+            transition: var(--transition);
+        }
+        .service-card:hover {
+            border-color: var(--orange); background: #fff;
+            transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.06);
+        }
+        .service-icon { font-size: 2.2rem; margin-bottom: 12px; }
+        .service-name { font-weight: 600; font-size: 0.95rem; }
+
+        /* ── HOW IT WORKS ── */
+        .how { background: var(--cream); }
+        .steps {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 40px; margin-top: 56px; position: relative;
+        }
+        .step { text-align: center; }
+        .step-num {
+            width: 52px; height: 52px; border-radius: 50%;
+            background: var(--orange); color: #fff;
+            font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .step h3 { font-size: 1.2rem; margin-bottom: 10px; }
+        .step p { color: var(--muted); font-size: 0.95rem; }
+
+        /* ── TESTIMONIALS ── */
+        .testimonials { background: var(--white); }
+        .testimonials-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 24px; margin-top: 48px;
+        }
+        .testimonial-card {
+            background: var(--cream); border: 1px solid var(--border);
+            border-radius: 16px; padding: 28px;
+        }
+        .stars { color: var(--orange); font-size: 1rem; margin-bottom: 14px; letter-spacing: 2px; }
+        .testimonial-text { font-size: 0.95rem; color: var(--ink); margin-bottom: 20px; line-height: 1.7; font-style: italic; }
+        .testimonial-author { font-weight: 700; font-size: 0.9rem; }
+        .testimonial-location { font-size: 0.8rem; color: var(--muted); }
+
+        /* ── CTA BANNER ── */
+        .cta-banner { background: var(--ink); color: var(--cream); }
+        .cta-inner {
+            display: flex; align-items: center; justify-content: space-between; gap: 40px;
+        }
+        .cta-text h2 {
+            font-family: var(--font-heading); font-size: 2.8rem;
+            margin-bottom: 12px;
+        }
+        .cta-text p { color: #A09B94; font-size: 1rem; }
+        .cta-actions { display: flex; gap: 16px; flex-shrink: 0; }
+        .btn-light {
+            padding: 16px 32px; background: var(--cream); color: var(--ink);
+            border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 1rem;
+            transition: var(--transition);
+        }
+        .btn-light:hover { background: #fff; transform: translateY(-2px); }
+        .btn-orange {
+            padding: 16px 32px; background: var(--orange); color: #fff;
+            border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 1rem;
+            transition: var(--transition);
+        }
+        .btn-orange:hover { background: var(--orange-hover); transform: translateY(-2px); }
+
+        /* ── FOOTER ── */
+        footer {
+            background: #0D0B09; color: #6E6862;
+            padding: 48px 40px; text-align: center;
+            border-top: 1px solid #222;
+        }
+        .footer-logo { font-family: var(--font-heading); font-size: 1.8rem; color: var(--cream); text-decoration: none; }
+        .footer-logo .r { color: var(--orange); font-style: italic; }
+        .footer-links { display: flex; justify-content: center; gap: 28px; margin: 20px 0; }
+        .footer-links a { color: #6E6862; text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+        .footer-links a:hover { color: var(--orange); }
+
+        /* Toast */
+        #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 1000; }
+        .toast {
+            background: var(--ink); color: #fff; padding: 14px 20px;
+            border-radius: 8px; margin-top: 10px; font-size: 0.9rem;
+            opacity: 0; transform: translateY(20px); transition: all 0.35s ease;
+            border-left: 4px solid var(--orange);
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero-content { grid-template-columns: 1fr; gap: 40px; }
+            .services-grid { grid-template-columns: repeat(2, 1fr); }
+            .steps { grid-template-columns: 1fr; }
+            .testimonials-grid { grid-template-columns: 1fr; }
+            .cta-inner { flex-direction: column; text-align: center; }
+        }
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 2.8rem; }
+            .section { padding: 64px 20px; }
+            nav { padding: 0 20px; }
+            .services-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="#" class="logo">Fix<span class="r">r</span></a>
+        <div class="nav-links">
+            <a href="#services" class="nav-link">Services</a>
+            <a href="#how" class="nav-link">How it Works</a>
+            <a href="login.html" class="nav-link">Sign In</a>
+            <a href="for-contractors.html" class="nav-btn">Are you a contractor?</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-glow"></div>
+        <div class="hero-glow-2"></div>
+        <div class="hero-content">
+            <div class="hero-text">
+                <div class="hero-eyebrow">📍 Spartanburg, SC &amp; Surrounding Areas</div>
+                <h1>Get it fixed <span class="accent">right,</span> by someone you can trust.</h1>
+                <p class="hero-sub">Fixr connects you with vetted, local home service professionals — plumbers, electricians, painters, and more. Free quotes, no spam calls.</p>
+                <div class="hero-trust">
+                    <span>✓ No signup required to browse</span>
+                    <div class="trust-dot"></div>
+                    <span>Free quotes</span>
+                    <div class="trust-dot"></div>
+                    <span>Local pros only</span>
+                </div>
+            </div>
+
+            <div class="quote-card">
+                <h3>Get your free quote</h3>
+                <p>Tell us what you need — we'll match you with the best local pros.</p>
+                <div class="form-field">
+                    <label>What service do you need?</label>
+                    <select id="heroService">
+                        <option value="" disabled selected>Select a service</option>
+                        <option>Plumbing</option>
+                        <option>Electrical</option>
+                        <option>HVAC / Air Conditioning</option>
+                        <option>Painting</option>
+                        <option>Flooring</option>
+                        <option>Carpentry</option>
+                        <option>Roofing</option>
+                        <option>Landscaping</option>
+                        <option>Appliance Repair</option>
+                        <option>General Handyman</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Your ZIP Code</label>
+                    <input type="text" id="heroZip" placeholder="e.g. 29302" maxlength="5">
+                </div>
+                <button class="quote-btn" onclick="goToQuote()">Get Free Quotes →</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services -->
+    <section id="services" class="section services" style="scroll-margin-top: 72px;">
+        <div class="container">
+            <div class="section-label">What we cover</div>
+            <h2 class="section-title">Every trade, one platform.</h2>
+            <p class="section-sub">Whether it's an emergency fix or a long-planned renovation, we've got pros ready.</p>
+            <div class="services-grid">
+                <div class="service-card" onclick="selectService('Plumbing')">
+                    <div class="service-icon">🔧</div>
+                    <div class="service-name">Plumbing</div>
+                </div>
+                <div class="service-card" onclick="selectService('Electrical')">
+                    <div class="service-icon">⚡</div>
+                    <div class="service-name">Electrical</div>
+                </div>
+                <div class="service-card" onclick="selectService('HVAC / Air Conditioning')">
+                    <div class="service-icon">❄️</div>
+                    <div class="service-name">HVAC</div>
+                </div>
+                <div class="service-card" onclick="selectService('Painting')">
+                    <div class="service-icon">🎨</div>
+                    <div class="service-name">Painting</div>
+                </div>
+                <div class="service-card" onclick="selectService('Flooring')">
+                    <div class="service-icon">🏠</div>
+                    <div class="service-name">Flooring</div>
+                </div>
+                <div class="service-card" onclick="selectService('Carpentry')">
+                    <div class="service-icon">🪚</div>
+                    <div class="service-name">Carpentry</div>
+                </div>
+                <div class="service-card" onclick="selectService('Roofing')">
+                    <div class="service-icon">🏗️</div>
+                    <div class="service-name">Roofing</div>
+                </div>
+                <div class="service-card" onclick="selectService('General Handyman')">
+                    <div class="service-icon">🛠️</div>
+                    <div class="service-name">Handyman</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how" class="section how" style="scroll-margin-top: 72px;">
+        <div class="container">
+            <div class="section-label">Simple process</div>
+            <h2 class="section-title">From request to fix in three steps.</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <h3>Describe the job</h3>
+                    <p>Tell us what needs fixing — the more detail you give, the more accurate your quotes will be. Takes about 2 minutes.</p>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <h3>Get matched</h3>
+                    <p>We connect your request to vetted local contractors who specialize in exactly what you need. No cold calls, no spam.</p>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <h3>Pick your pro</h3>
+                    <p>Review quotes, read ratings, and choose the contractor you're most comfortable with. You're in control the whole time.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="section testimonials">
+        <div class="container">
+            <div class="section-label">What homeowners say</div>
+            <h2 class="section-title">Real people, real results.</h2>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="stars">★★★★★</div>
+                    <p class="testimonial-text">"Got three quotes in under an hour. Picked one, he showed up the next day. The leak is fixed and I didn't have to call a single number."</p>
+                    <div class="testimonial-author">Linda M.</div>
+                    <div class="testimonial-location">Spartanburg, SC</div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="stars">★★★★★</div>
+                    <p class="testimonial-text">"My AC went out in July. Used Fixr and had someone at my house same afternoon. Other sites would have taken days to even respond."</p>
+                    <div class="testimonial-author">DeShawn T.</div>
+                    <div class="testimonial-location">Moore, SC</div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="stars">★★★★★</div>
+                    <p class="testimonial-text">"I was nervous about finding someone reliable. The contractor they matched me with was professional, on time, and fairly priced. 10/10."</p>
+                    <div class="testimonial-author">Patricia W.</div>
+                    <div class="testimonial-location">Boiling Springs, SC</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="section cta-banner">
+        <div class="container">
+            <div class="cta-inner">
+                <div class="cta-text">
+                    <h2>Ready to get it done?</h2>
+                    <p>Free quotes. No account needed. Just describe what you need.</p>
+                </div>
+                <div class="cta-actions">
+                    <a href="get-quote.html" class="btn-light">Get Free Quotes</a>
+                    <a href="for-contractors.html" class="btn-orange">Are you a contractor?</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <a href="#" class="footer-logo">Fix<span class="r">r</span></a>
+            <div class="footer-links">
+                <a href="#services">Services</a>
+                <a href="#how">How It Works</a>
+                <a href="for-contractors.html">For Contractors</a>
+                <a href="login.html">Sign In</a>
+            </div>
+            <p style="font-size:0.8rem;">© 2026 Fixr Inc. Spartanburg, SC · All rights reserved.</p>
+        </div>
+    </footer>
+
+    <div id="toast-container"></div>
+
+    <script>
+        function goToQuote() {
+            const service = document.getElementById('heroService').value;
+            const zip = document.getElementById('heroZip').value.trim();
+            if (!service) { showToast('Please select a service.'); return; }
+            if (!zip) { showToast('Please enter your ZIP code.'); return; }
+            const params = new URLSearchParams({ service, zip });
+            window.location.href = `get-quote.html?${params.toString()}`;
+        }
+
+        function selectService(name) {
+            document.getElementById('heroService').value = name;
+            document.getElementById('heroZip').focus();
+            document.querySelector('.quote-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function showToast(msg) {
+            const c = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.textContent = msg;
+            c.appendChild(t);
+            setTimeout(() => t.classList.add('show'), 10);
+            setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 350); }, 3200);
+        }
+    </script>
+</body>
+</html>

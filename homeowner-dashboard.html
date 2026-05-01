@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard — Fixr</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream: #F5F0E8; --ink: #141210; --orange: #C85A2A;
+            --orange-light: #fdebd0; --border: #E8E2D8; --muted: #8C867D;
+            --font-heading: 'Playfair Display', serif; --font-body: 'DM Sans', sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-body); background: #F0EBE0; color: var(--ink); min-height: 100vh; }
+
+        /* ── TOP BAR ── */
+        .topbar {
+            background: #fff; border-bottom: 1px solid var(--border);
+            padding: 0 32px; height: 60px;
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 50;
+        }
+        .logo { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; text-decoration: none; color: var(--ink); }
+        .logo .accent { color: var(--orange); font-style: italic; }
+        .topbar-right { display: flex; align-items: center; gap: 16px; }
+        .user-pill {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--cream); border: 1px solid var(--border);
+            border-radius: 100px; padding: 6px 14px 6px 6px;
+            font-size: 0.85rem; font-weight: 500;
+        }
+        .user-avatar {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: var(--orange); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; font-weight: 700; font-family: var(--font-heading);
+        }
+        .btn-logout {
+            font-size: 0.8rem; color: var(--muted); background: none;
+            border: none; cursor: pointer; font-family: var(--font-body);
+            padding: 0; transition: color 0.2s;
+        }
+        .btn-logout:hover { color: var(--ink); }
+
+        /* ── MAIN ── */
+        .main { max-width: 880px; margin: 0 auto; padding: 40px 24px 80px; }
+        .page-header { margin-bottom: 32px; }
+        .page-header h1 { font-family: var(--font-heading); font-size: 2rem; font-weight: 600; margin-bottom: 4px; }
+        .page-header .sub { font-size: 0.9rem; color: var(--muted); }
+
+        /* ── TABS ── */
+        .tabs { display: flex; gap: 4px; background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 4px; margin-bottom: 28px; width: fit-content; }
+        .tab-btn {
+            padding: 8px 20px; border-radius: 7px; border: none;
+            background: transparent; font-family: var(--font-body);
+            font-size: 0.875rem; font-weight: 500; cursor: pointer;
+            color: var(--muted); transition: all 0.18s;
+        }
+        .tab-btn.active { background: var(--orange); color: #fff; }
+        .tab-btn:hover:not(.active) { background: var(--cream); color: var(--ink); }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ── LEAD CARDS ── */
+        .lead-card {
+            background: #fff; border: 1px solid var(--border);
+            border-left: 4px solid var(--orange); border-radius: 12px;
+            padding: 22px 24px; margin-bottom: 14px;
+            transition: box-shadow 0.18s; cursor: pointer;
+        }
+        .lead-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.07); }
+        .lead-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .lead-service { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--orange); margin-bottom: 4px; }
+        .lead-title { font-family: var(--font-heading); font-size: 1.1rem; font-weight: 600; }
+        .lead-meta { font-size: 0.8rem; color: var(--muted); margin-top: 6px; display: flex; gap: 16px; flex-wrap: wrap; }
+        .lead-desc { font-size: 0.875rem; color: #4A4641; margin-top: 10px; line-height: 1.5; }
+
+        .badge {
+            display: inline-block; padding: 4px 12px; border-radius: 100px;
+            font-size: 0.7rem; font-weight: 700; white-space: nowrap;
+        }
+        .badge-new      { background: #EFF6FF; color: #1D4ED8; }
+        .badge-matched  { background: var(--orange-light); color: #a34821; }
+        .badge-progress { background: #FEF3C7; color: #92400E; }
+        .badge-done     { background: #D1FAE5; color: #065F46; }
+
+        .empty-state {
+            text-align: center; padding: 60px 20px;
+            background: #fff; border: 1px solid var(--border); border-radius: 12px;
+        }
+        .empty-state .es-icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .empty-state h3 { font-family: var(--font-heading); font-size: 1.2rem; margin-bottom: 8px; }
+        .empty-state p { font-size: 0.875rem; color: var(--muted); margin-bottom: 20px; }
+        .btn-cta {
+            display: inline-block; padding: 12px 24px;
+            background: var(--orange); color: #fff; border-radius: 8px;
+            font-family: var(--font-body); font-size: 0.9rem; font-weight: 600;
+            text-decoration: none; transition: background 0.2s;
+        }
+        .btn-cta:hover { background: #A34821; }
+
+        /* ── MESSAGES PANEL ── */
+        .msg-select-hint { font-size: 0.9rem; color: var(--muted); padding: 40px; text-align: center; background: #fff; border: 1px solid var(--border); border-radius: 12px; }
+        .msg-panel { background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .msg-panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border); background: #FAFAF7; }
+        .msg-panel-header h3 { font-family: var(--font-heading); font-size: 1rem; font-weight: 600; }
+        .msg-panel-header p  { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+        .msg-list { padding: 16px 20px; min-height: 260px; max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .msg-bubble { max-width: 78%; }
+        .msg-bubble.sent { align-self: flex-end; }
+        .msg-bubble.recv { align-self: flex-start; }
+        .msg-text {
+            padding: 10px 14px; border-radius: 12px; font-size: 0.875rem; line-height: 1.5;
+        }
+        .msg-bubble.sent  .msg-text { background: var(--orange); color: #fff; border-radius: 12px 12px 2px 12px; }
+        .msg-bubble.recv  .msg-text { background: #F0EBE0; color: var(--ink); border-radius: 12px 12px 12px 2px; }
+        .msg-meta { font-size: 0.68rem; color: var(--muted); margin-top: 4px; }
+        .msg-bubble.sent .msg-meta { text-align: right; }
+        .msg-compose { display: flex; gap: 10px; padding: 14px 16px; border-top: 1px solid var(--border); }
+        .msg-compose input {
+            flex: 1; padding: 10px 14px; border: 1px solid var(--border);
+            border-radius: 8px; font-family: var(--font-body); font-size: 0.875rem;
+            background: #FAFAF7; outline: none;
+        }
+        .msg-compose input:focus { border-color: var(--orange); background: #fff; }
+        .btn-send {
+            padding: 10px 18px; background: var(--orange); color: #fff;
+            border: none; border-radius: 8px; font-family: var(--font-body);
+            font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.18s;
+        }
+        .btn-send:hover { background: #A34821; }
+
+        /* lead selector in messages tab */
+        .lead-selector { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+        .lead-sel-btn {
+            padding: 10px 16px; background: #fff; border: 1px solid var(--border);
+            border-radius: 8px; font-family: var(--font-body); font-size: 0.875rem;
+            cursor: pointer; text-align: left; transition: all 0.15s; color: var(--ink);
+        }
+        .lead-sel-btn:hover, .lead-sel-btn.active { border-color: var(--orange); background: var(--orange-light); }
+
+        /* ── TOAST ── */
+        #toast-container { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
+        .toast {
+            background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15); display: flex; align-items: center;
+            gap: 10px; font-size: 0.875rem; transform: translateY(60px); opacity: 0;
+            transition: all 0.3s cubic-bezier(0.68,-0.55,0.265,1.45); max-width: 320px;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { border-left: 4px solid #2ECC71; }
+        .toast.error   { border-left: 4px solid #E74C3C; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <a href="index.html" class="logo">Fix<span class="accent">r</span></a>
+    <div class="topbar-right">
+        <div class="user-pill">
+            <div class="user-avatar" id="avatar-initials">?</div>
+            <span id="user-name-display">Loading…</span>
+        </div>
+        <button class="btn-logout" onclick="logout()">Sign out</button>
+    </div>
+</div>
+
+<div class="main">
+    <div class="page-header">
+        <h1 id="welcome-heading">My Dashboard</h1>
+        <div class="sub">Track your requests and communicate with your contractor.</div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('requests')">📋 My Requests</button>
+        <button class="tab-btn" onclick="switchTab('messages')">💬 Messages</button>
+    </div>
+
+    <!-- ── REQUESTS TAB ── -->
+    <div class="tab-panel active" id="tab-requests">
+        <div id="leads-container">
+            <div class="empty-state">
+                <div class="es-icon">⏳</div>
+                <h3>Loading your requests…</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MESSAGES TAB ── -->
+    <div class="tab-panel" id="tab-messages">
+        <div id="lead-selector-wrap" class="lead-selector"></div>
+        <div id="msg-panel-wrap">
+            <div class="msg-select-hint">Select a request above to view your messages.</div>
+        </div>
+    </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+    const userId = localStorage.getItem('fixr_userId');
+    const role   = localStorage.getItem('fixr_role');
+    const name   = localStorage.getItem('fixr_name') || 'You';
+
+    // Auth guard
+    if (!userId || role !== 'homeowner') {
+        window.location.href = 'login.html';
+    }
+
+    // Set user display
+    document.getElementById('user-name-display').textContent = name;
+    const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+    document.getElementById('avatar-initials').textContent = initials;
+    document.getElementById('welcome-heading').textContent = `Welcome back, ${name.split(' ')[0]} 👋`;
+
+    let userLeads = [];
+    let activeLeadId = null;
+
+    // ── Tabs ─────────────────────────────────────────────────────────────────
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach((b, i) => {
+            b.classList.toggle('active', ['requests','messages'][i] === tab);
+        });
+        document.getElementById('tab-requests').classList.toggle('active', tab === 'requests');
+        document.getElementById('tab-messages').classList.toggle('active', tab === 'messages');
+        if (tab === 'messages') renderLeadSelector();
+    }
+
+    // ── Status badge helper ───────────────────────────────────────────────────
+    function statusBadge(status) {
+        const map = {
+            'New':         'badge-new',
+            'Open':        'badge-new',
+            'Matched':     'badge-matched',
+            'In Progress': 'badge-progress',
+            'Complete':    'badge-done'
+        };
+        return `<span class="badge ${map[status] || 'badge-new'}">${status}</span>`;
+    }
+
+    // ── Load leads ────────────────────────────────────────────────────────────
+    async function loadLeads() {
+        try {
+            const res  = await fetch(`/api/homeowner/leads/${userId}`);
+            userLeads  = await res.json();
+            renderLeads();
+        } catch (e) {
+            document.getElementById('leads-container').innerHTML =
+                `<div class="empty-state"><div class="es-icon">⚠️</div><h3>Could not load requests</h3><p>Make sure the server is running.</p></div>`;
+        }
+    }
+
+    function renderLeads() {
+        const wrap = document.getElementById('leads-container');
+        if (!userLeads.length) {
+            wrap.innerHTML = `
+                <div class="empty-state">
+                    <div class="es-icon">📋</div>
+                    <h3>No requests yet</h3>
+                    <p>Submit your first project request to get quotes from local pros.</p>
+                    <a href="get-quote.html" class="btn-cta">Get a Free Quote</a>
+                </div>`;
+            return;
+        }
+        wrap.innerHTML = userLeads.map(l => `
+            <div class="lead-card" onclick="openMessages(${l.id}, '${(l.job_title||l.service).replace(/'/g,"\\'")}')">
+                <div class="lead-card-header">
+                    <div>
+                        <div class="lead-service">${l.service}</div>
+                        <div class="lead-title">${l.job_title || l.service}</div>
+                    </div>
+                    ${statusBadge(l.status)}
+                </div>
+                <div class="lead-meta">
+                    <span>📍 ${l.zip_code || '—'}</span>
+                    ${l.urgency   ? `<span>⏱ ${l.urgency}</span>` : ''}
+                    ${l.budget_range ? `<span>💰 ${l.budget_range}</span>` : ''}
+                    ${l.contractor_name ? `<span>👷 ${l.contractor_name}</span>` : ''}
+                    <span>🗓 ${new Date(l.created_at).toLocaleDateString()}</span>
+                </div>
+                ${l.description ? `<div class="lead-desc">${l.description.slice(0,160)}${l.description.length>160?'…':''}</div>` : ''}
+            </div>`).join('');
+    }
+
+    // ── Messages ──────────────────────────────────────────────────────────────
+    function renderLeadSelector() {
+        const wrap = document.getElementById('lead-selector-wrap');
+        if (!userLeads.length) { wrap.innerHTML = ''; return; }
+        wrap.innerHTML = userLeads.map(l =>
+            `<button class="lead-sel-btn ${activeLeadId===l.id?'active':''}" onclick="openMessages(${l.id},'${(l.job_title||l.service).replace(/'/g,"\\'")}')">
+                📋 ${l.job_title || l.service} <span style="float:right;font-size:0.72rem;color:var(--muted);">${l.status}</span>
+            </button>`
+        ).join('');
+    }
+
+    function openMessages(leadId, title) {
+        activeLeadId = leadId;
+        switchTab('messages');
+        renderLeadSelector();
+        loadMessages(leadId, title);
+    }
+
+    async function loadMessages(leadId, title) {
+        const wrap = document.getElementById('msg-panel-wrap');
+        wrap.innerHTML = `<div class="msg-select-hint">Loading messages…</div>`;
+        try {
+            const res  = await fetch(`/api/messages/${leadId}`);
+            const msgs = await res.json();
+            renderMessages(msgs, leadId, title);
+        } catch(e) {
+            wrap.innerHTML = `<div class="msg-select-hint">Failed to load messages.</div>`;
+        }
+    }
+
+    function renderMessages(msgs, leadId, title) {
+        const wrap = document.getElementById('msg-panel-wrap');
+        const lead = userLeads.find(l => l.id === leadId);
+        const contractorName = lead?.contractor_name || 'Your contractor';
+
+        const bubbles = msgs.length ? msgs.map(m => {
+            const sent = String(m.sender_id) === String(userId);
+            const time = new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+            return `<div class="msg-bubble ${sent?'sent':'recv'}">
+                <div class="msg-text">${m.body}</div>
+                <div class="msg-meta">${sent ? 'You' : m.sender_name} · ${time}</div>
+            </div>`;
+        }).join('') : `<div style="text-align:center;color:var(--muted);font-size:0.85rem;margin:auto;">No messages yet. Say hello to your contractor!</div>`;
+
+        wrap.innerHTML = `
+            <div class="msg-panel">
+                <div class="msg-panel-header">
+                    <h3>${title}</h3>
+                    <p>${lead?.contractor_name ? `Connected with ${contractorName}` : 'Awaiting contractor assignment'}</p>
+                </div>
+                <div class="msg-list" id="msg-list-${leadId}">${bubbles}</div>
+                <div class="msg-compose">
+                    <input type="text" id="msg-input" placeholder="Type a message…" onkeydown="if(event.key==='Enter') sendMessage(${leadId})">
+                    <button class="btn-send" onclick="sendMessage(${leadId})">Send</button>
+                </div>
+            </div>`;
+        // scroll to bottom
+        const list = document.getElementById(`msg-list-${leadId}`);
+        if (list) list.scrollTop = list.scrollHeight;
+    }
+
+    async function sendMessage(leadId) {
+        const input = document.getElementById('msg-input');
+        const body  = input.value.trim();
+        if (!body) return;
+
+        const lead = userLeads.find(l => l.id === leadId);
+        const receiverId = lead?.assigned_contractor_id;
+        if (!receiverId) {
+            showToast('No contractor assigned to this request yet.', 'error');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lead_id: leadId, sender_id: userId, receiver_id: receiverId, body })
+            });
+            if (res.ok) {
+                input.value = '';
+                loadMessages(leadId, lead.job_title || lead.service);
+            } else {
+                showToast('Failed to send message.', 'error');
+            }
+        } catch(e) {
+            showToast('Server error.', 'error');
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('fixr_userId');
+        localStorage.removeItem('fixr_role');
+        localStorage.removeItem('fixr_name');
+        window.location.href = 'index.html';
+    }
+
+    function showToast(msg, type='error') {
+        const c = document.getElementById('toast-container');
+        const t = document.createElement('div');
+        t.className = `toast ${type}`;
+        t.innerHTML = `<span>${type==='success'?'✅':'⚠️'}</span><span>${msg}</span>`;
+        c.appendChild(t);
+        setTimeout(() => t.classList.add('show'), 10);
+        setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 4000);
+    }
+
+    loadLeads();
+</script>
+</body>
+</html>

@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Fixr</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --orange: #C85A2A;
+            --orange-hover: #A34821;
+            --orange-light: rgba(200, 90, 42, 0.1);
+            --ink: #141210;
+            --cream: #F5F0E8;
+            --bg-light: #F9F8F6;
+            --border: #E0D9CE;
+            --muted: #8C867D;
+            
+            --font-heading: 'Playfair Display', serif;
+            --font-body: 'DM Sans', sans-serif;
+            --transition: all 0.2s ease;
+            
+            --sidebar-width: 240px;
+            --topbar-height: 60px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-light);
+            color: var(--ink);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ── BUTTONS & UTILS ── */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 0.875rem;
+            cursor: pointer; border: 1px solid transparent; transition: var(--transition);
+        }
+        .btn-primary { background: var(--orange); color: #fff; }
+        .btn-primary:hover { background: var(--orange-hover); }
+        .btn-outline { background: #fff; border-color: var(--border); color: var(--ink); }
+        .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
+        .btn-sm { padding: 4px 10px; font-size: 0.8rem; }
+
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .gap-2 { gap: 8px; }
+        .gap-4 { gap: 16px; }
+
+        .badge {
+            padding: 2px 8px; border-radius: 100px; font-size: 0.75rem; font-weight: 600;
+        }
+        .badge-gray { background: #E5E7EB; color: #374151; }
+        .badge-blue { background: #DBEAFE; color: #1E40AF; }
+        .badge-yellow { background: #FEF3C7; color: #92400E; }
+        .badge-green { background: #D1FAE5; color: #065F46; }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--ink);
+            color: var(--cream);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #333;
+            flex-shrink: 0;
+        }
+        .sidebar-header {
+            height: var(--topbar-height);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            border-bottom: 1px solid #333;
+        }
+        .logo { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 700; color: #fff; text-decoration: none; }
+        .logo .accent { color: var(--orange); font-style: italic; }
+        
+        .nav-menu { padding: 20px 12px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 16px; border-radius: 8px;
+            color: #A09B94; text-decoration: none; font-size: 0.95rem; font-weight: 500;
+            transition: var(--transition); cursor: pointer; border: none; background: transparent; width: 100%; text-align: left;
+        }
+        .nav-item:hover { background: #252320; color: #fff; }
+        .nav-item.active { background: var(--orange); color: #fff; }
+        
+        .sidebar-footer { padding: 20px; border-top: 1px solid #333; }
+        .user-profile { display: flex; align-items: center; gap: 12px; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; background: #444; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem; }
+        .user-info { flex: 1; overflow: hidden; }
+        .user-name { font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-plan { font-size: 0.75rem; color: var(--orange); }
+        .logout-link { font-size: 0.8rem; color: #A09B94; text-decoration: none; display: block; margin-top: 8px; cursor:pointer;}
+        .logout-link:hover { color: #fff; }
+
+        /* ── MAIN CONTENT ── */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .topbar {
+            height: var(--topbar-height);
+            background: #fff;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+        }
+        .page-title { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 600; }
+        
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            background: var(--bg-light);
+        }
+
+        /* View Panels */
+        .view-panel { display: none; height: 100%; flex-direction: column; }
+        .view-panel.active { display: flex; }
+
+        /* ── KANBAN PIPELINE ── */
+        .kanban-board {
+            display: flex;
+            gap: 16px;
+            height: 100%;
+            overflow-x: auto;
+            padding-bottom: 16px;
+            align-items: flex-start;
+        }
+        .kanban-column {
+            background: #F4F2EC;
+            border-radius: 12px;
+            min-width: 280px;
+            width: 280px;
+            max-height: 100%;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+        }
+        .column-header {
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .column-count {
+            background: #E0D9CE; color: var(--ink); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;
+        }
+        .column-body {
+            padding: 12px;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 100px;
+        }
+        .job-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            cursor: grab;
+        }
+        .job-card:active { cursor: grabbing; }
+        .job-card-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; }
+        .job-card-client { font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; display:flex; align-items:center; gap:4px; }
+        .job-card-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; }
+        .job-value { font-weight: 600; color: #059669; }
+
+        /* ── CRM CLIENTS ── */
+        .card-panel {
+            background: #fff; border: 1px solid var(--border); border-radius: 12px;
+            overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background: #FAFAF7; padding: 12px 16px; font-size: 0.8rem; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
+        td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #FAFAF7; cursor: pointer; }
+        .client-name { font-weight: 600; color: var(--ink); }
+        .client-contact { font-size: 0.8rem; color: var(--muted); display: block; }
+
+        /* ── ANALYTICS ── */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
+        .stat-title { font-size: 0.85rem; color: var(--muted); font-weight: 600; margin-bottom: 8px; text-transform: uppercase; }
+        .stat-value { font-family: var(--font-heading); font-size: 2rem; font-weight: 700; color: var(--ink); }
+        
+        .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+        @media (max-width: 1024px) { .charts-grid { grid-template-columns: 1fr; } }
+        .chart-container { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
+        .chart-header { font-weight: 600; margin-bottom: 16px; }
+
+        /* Toast */
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
+        .toast { background: var(--ink); color: #fff; padding: 12px 20px; border-radius: 8px; margin-top: 10px; opacity: 0; transition: opacity 0.3s; font-size: 0.9rem; }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="#" class="logo">Fix<span class="accent">r</span></a>
+        </div>
+        <nav class="nav-menu">
+            <button class="nav-item active" data-view="pipeline" onclick="switchView('pipeline')">📋 Pipeline</button>
+            <button class="nav-item" data-view="clients" onclick="switchView('clients')">👥 Clients</button>
+            <button class="nav-item" data-view="analytics" onclick="switchView('analytics')">📈 Earnings</button>
+            <button class="nav-item" data-view="quotes" onclick="switchView('quotes')">📝 Quotes & Invoices</button>
+            <button class="nav-item" data-view="leads" onclick="switchView('leads')">🔔 Homeowner Leads <span class="badge badge-yellow" style="margin-left:auto">2</span></button>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="avatar" id="userInitials">MR</div>
+                <div class="user-info">
+                    <div class="user-name" id="userName">Mike Reynolds</div>
+                    <div class="user-plan" id="userPlan">Starter Plan</div>
+                </div>
+            </div>
+            <a href="#" class="logout-link" onclick="logout()">Sign Out</a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-wrapper">
+        <header class="topbar">
+            <h1 class="page-title" id="pageTitle">Pipeline</h1>
+            <div class="topbar-actions">
+                <button class="btn btn-primary" onclick="showToast('New record functionality coming soon.')">+ New Job</button>
+            </div>
+        </header>
+
+        <section class="content">
+            
+            <!-- PIPELINE VIEW -->
+            <div id="view-pipeline" class="view-panel active">
+                <div class="kanban-board">
+                    
+                    <!-- Col: New -->
+                    <div class="kanban-column" ondrop="drop(event, 'New')" ondragover="allowDrop(event)">
+                        <div class="column-header">
+                            <span>New</span>
+                            <span class="column-count">2</span>
+                        </div>
+                        <div class="column-body" id="col-new">
+                        </div>
+                    </div>
+
+                    <!-- Col: Scheduled -->
+                    <div class="kanban-column" ondrop="drop(event, 'Scheduled')" ondragover="allowDrop(event)">
+                        <div class="column-header">
+                            <span>Scheduled</span>
+                            <span class="column-count">1</span>
+                        </div>
+                        <div class="column-body" id="col-scheduled">
+                        </div>
+                    </div>
+
+                    <!-- Col: In Progress -->
+                    <div class="kanban-column" ondrop="drop(event, 'In Progress')" ondragover="allowDrop(event)">
+                        <div class="column-header">
+                            <span>In Progress</span>
+                            <span class="column-count">1</span>
+                        </div>
+                        <div class="column-body" id="col-progress">
+                        </div>
+                    </div>
+
+                    <!-- Col: Completed -->
+                    <div class="kanban-column" ondrop="drop(event, 'Completed')" ondragover="allowDrop(event)">
+                        <div class="column-header">
+                            <span>Completed</span>
+                            <span class="column-count">1</span>
+                        </div>
+                        <div class="column-body" id="col-completed">
+                        </div>
+                    </div>
+
+                    <!-- Col: Invoiced -->
+                    <div class="kanban-column" ondrop="drop(event, 'Invoiced')" ondragover="allowDrop(event)">
+                        <div class="column-header">
+                            <span>Invoiced / Waiting Pmt</span>
+                            <span class="column-count">1</span>
+                        </div>
+                        <div class="column-body" id="col-invoiced">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- CLIENTS CRM VIEW -->
+            <div id="view-clients" class="view-panel">
+                <div class="card-panel">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Client Name</th>
+                                    <th>Contact</th>
+                                    <th>Address</th>
+                                    <th>Total Jobs</th>
+                                    <th>Lifetime Value</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clients-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ANALYTICS VIEW -->
+            <div id="view-analytics" class="view-panel">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-title">This Week's Revenue</div>
+                        <div class="stat-value">$2,750</div>
+                        <div style="font-size:0.8rem; color:#059669; margin-top:4px;">↑ 12% vs last week</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Jobs Completed</div>
+                        <div class="stat-value">8</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Avg. Job Size</div>
+                        <div class="stat-value">$343</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Unpaid Invoices</div>
+                        <div class="stat-value" style="color:var(--orange)">$1,250</div>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-header">Revenue (Last 30 Days)</div>
+                        <canvas id="revenueChart" height="250"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-header">Jobs by Service Type</div>
+                        <canvas id="serviceChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PLACEHOLDER VIEWS -->
+            <div id="view-quotes" class="view-panel">
+                <div style="text-align:center; padding: 60px; color: var(--muted);">
+                    <h2>Quote & Invoice Builder</h2>
+                    <p>Coming soon. Create line-item quotes and turn them into invoices instantly.</p>
+                </div>
+            </div>
+
+            <div id="view-leads" class="view-panel">
+                <div class="card-panel">
+                    <h2 style="margin-bottom: 20px; font-family: var(--font-heading);">Available Leads</h2>
+                    <div id="contractor-leads-container">
+                        <div style="text-align:center; padding: 60px; color: var(--muted);">Loading leads...</div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <div id="toast-container"></div>
+
+    <script>
+        // Session / Auth Guard
+        const userId = localStorage.getItem('fixr_userId');
+        const role = localStorage.getItem('fixr_role');
+        const name = localStorage.getItem('fixr_name') || 'Contractor';
+        const plan = localStorage.getItem('fixr_plan') || 'Starter';
+        
+        if (!userId || role !== 'contractor') {
+            window.location.href = 'login.html';
+        } else {
+            // Set User Info
+            document.getElementById('userName').textContent = name;
+            document.getElementById('userInitials').textContent = name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+            document.getElementById('userPlan').textContent = plan + ' Plan';
+            
+            // Load live data
+            loadJobs();
+            loadClients();
+            loadContractorLeads();
+        }
+        
+        // Navigation Logic
+        const titles = {
+            'pipeline': 'Pipeline',
+            'clients': 'Clients',
+            'analytics': 'Earnings & Analytics',
+            'quotes': 'Quotes & Invoices',
+            'leads': 'Homeowner Leads'
+        };
+
+        function switchView(viewId) {
+            // Update nav items
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active');
+                if (el.dataset.view === viewId) {
+                    el.classList.add('active');
+                }
+            });
+            
+            // Update panels
+            document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-' + viewId).classList.add('active');
+            
+            // Update title
+            document.getElementById('pageTitle').textContent = titles[viewId];
+
+            // Render charts if analytics view
+            if (viewId === 'analytics' && !window.chartsRendered) {
+                renderCharts();
+                window.chartsRendered = true;
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        function showToast(msg) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = msg;
+            container.appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ── Kanban Drag & Drop ──
+        let draggedJobId = null;
+
+        function drag(ev) {
+            draggedJobId = ev.target.id;
+            ev.dataTransfer.setData("text", ev.target.id);
+            ev.target.style.opacity = '0.5';
+        }
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drop(ev, stageName) {
+            ev.preventDefault();
+            const data = ev.dataTransfer.getData("text");
+            const draggedElement = document.getElementById(data);
+            draggedElement.style.opacity = '1';
+            
+            // Find the column body to append to
+            let targetCol = ev.target;
+            while (!targetCol.classList.contains('kanban-column')) {
+                targetCol = targetCol.parentElement;
+                if (!targetCol) return;
+            }
+            
+            const colBody = targetCol.querySelector('.column-body');
+            colBody.appendChild(draggedElement);
+            
+            // Update counts
+            updateCounts();
+            
+            // Update in backend
+            fetch(`/api/jobs/${data}/stage`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stage: stageName, position: Array.from(colBody.children).indexOf(draggedElement) })
+            }).catch(console.error);
+
+            showToast(`Moved to ${stageName}`);
+        }
+        
+        // Reset opacity on drag end even if not dropped in valid zone
+        document.addEventListener('dragend', (e) => {
+            if (e.target.classList.contains('job-card')) {
+                e.target.style.opacity = '1';
+            }
+        });
+
+        // ── Data Fetching ──
+        async function loadJobs() {
+            try {
+                const res = await fetch(`/api/jobs?contractor_id=${userId}`);
+                const jobs = await res.json();
+                
+                // Clear columns
+                document.querySelectorAll('.column-body').forEach(el => el.innerHTML = '');
+                
+                jobs.forEach(job => {
+                    const colMap = {
+                        'New': 'col-new',
+                        'Scheduled': 'col-scheduled',
+                        'In Progress': 'col-progress',
+                        'Completed': 'col-completed',
+                        'Invoiced': 'col-invoiced'
+                    };
+                    const colId = colMap[job.stage] || 'col-new';
+                    const col = document.getElementById(colId);
+                    if (!col) return;
+                    
+                    const el = document.createElement('div');
+                    el.className = 'job-card';
+                    el.draggable = true;
+                    el.id = job.id;
+                    el.ondragstart = drag;
+                    
+                    let badge = '';
+                    if (job.stage === 'New') badge = '<span class="badge badge-gray">New Request</span>';
+                    if (job.stage === 'Scheduled' && job.due_date) badge = `<span style="font-size:0.75rem; color:var(--muted)">📅 ${job.due_date}</span>`;
+                    if (job.stage === 'In Progress') badge = '<span class="badge badge-blue">On Site</span>';
+                    if (job.stage === 'Completed') badge = '<span class="badge badge-yellow">Needs Invoice</span>';
+                    if (job.stage === 'Invoiced') badge = '<span class="badge badge-green">Sent</span>';
+                    
+                    let valueStr = job.value ? `<span class="job-value">$${job.value}</span>` : '';
+                    
+                    el.innerHTML = `
+                        <div class="job-card-title">${job.title}</div>
+                        ${job.client_id ? `<div class="job-card-client">👤 Client</div>` : ''}
+                        <div class="job-card-footer">
+                            ${badge}
+                            ${valueStr}
+                        </div>
+                    `;
+                    col.appendChild(el);
+                });
+                
+                updateCounts();
+            } catch (e) {
+                console.error("Failed to load jobs", e);
+            }
+        }
+
+        async function loadClients() {
+            try {
+                const res = await fetch(`/api/clients?contractor_id=${userId}`);
+                const clients = await res.json();
+                
+                const tbody = document.getElementById('clients-tbody');
+                tbody.innerHTML = '';
+                
+                clients.forEach(c => {
+                    const statusBadge = c.status === 'Active' ? 'badge-green' : 'badge-gray';
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><div class="client-name">${c.name}</div></td>
+                        <td><span class="client-contact">${c.phone || '-'}<br>${c.email || ''}</span></td>
+                        <td><span class="client-contact">${c.address || '-'}</span></td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td><span class="badge ${statusBadge}">${c.status}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                console.error("Failed to load clients", e);
+            }
+        }
+
+        async function loadContractorLeads() {
+            try {
+                const res = await fetch(`/api/leads`);
+                const leads = await res.json();
+                
+                const container = document.getElementById('contractor-leads-container');
+                container.innerHTML = '';
+                
+                if (leads.length === 0) {
+                    container.innerHTML = '<div style="text-align:center; padding: 60px; color: var(--muted);">No new leads available in your area.</div>';
+                    return;
+                }
+                
+                leads.forEach(lead => {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'border: 1px solid var(--border); padding: 20px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start;';
+                    div.innerHTML = `
+                        <div>
+                            <div style="color: var(--orange); font-weight: bold; font-size: 0.8rem; text-transform: uppercase;">${lead.service}</div>
+                            <h3 style="font-family: var(--font-heading); margin-bottom: 8px;">${lead.job_title || lead.service}</h3>
+                            <div style="font-size: 0.9rem; color: var(--muted); margin-bottom: 12px;">📍 ${lead.zip_code || 'Unknown ZIP'} · ⏱ ${lead.urgency || 'Flexible'} · 💰 ${lead.budget_range || 'TBD'}</div>
+                            <p style="font-size: 0.95rem;">${lead.description || 'No description provided.'}</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="acceptLead('${lead.id}')">Accept Lead</button>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (e) {
+                console.error("Failed to load leads", e);
+            }
+        }
+
+        async function acceptLead(leadId) {
+            try {
+                const res = await fetch(`/api/leads/${leadId}/accept`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contractor_user_id: userId })
+                });
+                
+                if (res.ok) {
+                    showToast('Lead accepted! Added to Pipeline and Clients.');
+                    loadContractorLeads(); // Refresh leads list
+                    loadJobs(); // Refresh pipeline
+                    loadClients(); // Refresh clients CRM
+                } else {
+                    const data = await res.json();
+                    showToast(data.error || 'Failed to accept lead.');
+                }
+            } catch (e) {
+                showToast('Server error while accepting lead.');
+            }
+        }
+
+        function updateCounts() {
+            document.querySelectorAll('.kanban-column').forEach(col => {
+                const count = col.querySelectorAll('.job-card').length;
+                col.querySelector('.column-count').textContent = count;
+            });
+        }
+
+        // ── Charts ──
+        function renderCharts() {
+            // Revenue Chart
+            const ctxRev = document.getElementById('revenueChart').getContext('2d');
+            new Chart(ctxRev, {
+                type: 'bar',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: [1200, 1900, 1500, 2750],
+                        backgroundColor: '#C85A2A',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Service Chart
+            const ctxSvc = document.getElementById('serviceChart').getContext('2d');
+            new Chart(ctxSvc, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Plumbing', 'HVAC', 'General'],
+                    datasets: [{
+                        data: [15, 5, 2],
+                        backgroundColor: ['#C85A2A', '#141210', '#E0D9CE']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

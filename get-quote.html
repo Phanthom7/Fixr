@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get a Free Quote — Fixr</title>
+    <meta name="description" content="Tell us about your home project and get accurate quotes from vetted local contractors in Spartanburg, SC.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream:   #F5F0E8;
+            --ink:     #141210;
+            --orange:  #C85A2A;
+            --orange-hover: #A34821;
+            --orange-light: #fdebd0;
+            --warm-bg: #F0E8D4;
+            --border:  #E0D9CE;
+            --muted:   #8C867D;
+            --font-heading: 'Playfair Display', serif;
+            --font-body:    'DM Sans', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--cream);
+            color: var(--ink);
+            min-height: 100vh;
+        }
+
+        /* ── NAV ── */
+        .topnav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: rgba(245,240,232,0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .logo {
+            font-family: var(--font-heading);
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--ink);
+            text-decoration: none;
+        }
+        .logo .accent { color: var(--orange); font-style: italic; }
+        .topnav-link {
+            font-size: 0.875rem;
+            color: var(--muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .topnav-link:hover { color: var(--orange); }
+
+        /* ── LAYOUT ── */
+        .page-wrap {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 52px 24px 80px;
+        }
+
+        .page-eyebrow {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+            color: var(--orange);
+            margin-bottom: 12px;
+        }
+        .page-title {
+            font-family: var(--font-heading);
+            font-size: 2.6rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 10px;
+        }
+        .page-sub {
+            font-size: 1.05rem;
+            color: var(--muted);
+            margin-bottom: 44px;
+            max-width: 600px;
+        }
+
+        /* ── SECTIONS ── */
+        .form-section {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 20px;
+        }
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        .section-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--orange);
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .section-title {
+            font-family: var(--font-heading);
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+
+        /* ── FORM ELEMENTS ── */
+        .field-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .field-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+        .field:last-child { margin-bottom: 0; }
+
+        .field label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--muted);
+        }
+        .field label .req { color: var(--orange); margin-left: 2px; }
+
+        .field input,
+        .field select,
+        .field textarea {
+            padding: 13px 16px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            background: #FAFAF7;
+            color: var(--ink);
+            transition: border-color 0.2s, background 0.2s;
+            width: 100%;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .field input:focus,
+        .field select:focus,
+        .field textarea:focus {
+            border-color: var(--orange);
+            background: #fff;
+        }
+        .field textarea { resize: vertical; min-height: 130px; line-height: 1.6; }
+
+        .field .hint {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: -2px;
+        }
+
+        /* Urgency / option pills */
+        .pill-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .pill-group input[type="radio"] { display: none; }
+        .pill-group label {
+            padding: 8px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.18s;
+            text-transform: none;
+            letter-spacing: 0;
+            color: var(--ink);
+        }
+        .pill-group input[type="radio"]:checked + label {
+            background: var(--orange);
+            border-color: var(--orange);
+            color: #fff;
+        }
+        .pill-group label:hover { border-color: var(--orange); color: var(--orange); }
+
+        /* ── SUBMIT ── */
+        .submit-area {
+            margin-top: 28px;
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 18px;
+            background: var(--orange);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-family: var(--font-body);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-submit:hover {
+            background: var(--orange-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(200,90,42,0.3);
+        }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .login-hint {
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--muted);
+            margin-top: 16px;
+        }
+        .login-hint a { color: var(--orange); font-weight: 600; text-decoration: none; }
+        .login-hint a:hover { text-decoration: underline; }
+
+        /* ── TRUST STRIP ── */
+        .trust-strip {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-top: 36px;
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+        .trust-strip span::before { content: '✓ '; color: var(--orange); font-weight: 700; }
+
+        /* ── TOAST ── */
+        #toast-container {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .toast {
+            background: var(--ink);
+            color: #fff;
+            padding: 14px 20px;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.875rem;
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(0.68,-0.55,0.265,1.45);
+            max-width: 340px;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { border-left: 4px solid #2ECC71; }
+        .toast.error   { border-left: 4px solid #E74C3C; }
+
+        @media (max-width: 640px) {
+            .field-grid-2,
+            .field-grid-3 { grid-template-columns: 1fr; }
+            .page-title { font-size: 2rem; }
+            .topnav { padding: 16px 20px; }
+            .page-wrap { padding: 32px 16px 60px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="topnav">
+        <a href="index.html" class="logo">Fix<span class="accent">r</span></a>
+        <a href="login.html" class="topnav-link">Already have an account? Sign in →</a>
+    </nav>
+
+    <div class="page-wrap">
+        <div class="page-eyebrow">Free — No commitment</div>
+        <h1 class="page-title">Tell us about your project.</h1>
+        <p class="page-sub">The more detail you provide, the more accurate your quotes will be. Takes about 2 minutes.</p>
+
+        <!-- ── Section 1: Job Details ── -->
+        <div class="form-section">
+            <div class="section-label">
+                <div class="section-num">1</div>
+                <div class="section-title">About the job</div>
+            </div>
+
+            <div class="field">
+                <label>Type of service <span class="req">*</span></label>
+                <select id="service">
+                    <option value="" disabled selected>Select a service</option>
+                    <option value="Plumbing">🚰 Plumbing</option>
+                    <option value="Electrical">⚡ Electrical</option>
+                    <option value="Painting">🎨 Painting</option>
+                    <option value="Flooring">🪵 Flooring</option>
+                    <option value="HVAC">❄️ HVAC</option>
+                    <option value="Carpentry">🔨 Carpentry</option>
+                    <option value="Roofing">🏠 Roofing</option>
+                    <option value="Landscaping">🌿 Landscaping</option>
+                    <option value="Appliance Repair">🧊 Appliance Repair</option>
+                    <option value="General Handyman">🔧 General Handyman</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Brief job title <span class="req">*</span></label>
+                <input type="text" id="job_title" placeholder='e.g. "Fix leaking kitchen faucet" or "Paint living room + hallway"'>
+            </div>
+
+            <div class="field">
+                <label>Describe the problem or project in detail <span class="req">*</span></label>
+                <textarea id="description" placeholder="Include as much detail as possible — what's broken, the size of the area, any materials you prefer, access limitations, etc. The more you share, the better your quotes."></textarea>
+                <span class="hint">Tip: mention if it's an emergency, how long the issue has existed, and any previous repair attempts.</span>
+            </div>
+
+            <div class="field">
+                <label>How urgent is this?</label>
+                <div class="pill-group">
+                    <input type="radio" name="urgency" id="u1" value="ASAP">
+                    <label for="u1">🔴 ASAP</label>
+                    <input type="radio" name="urgency" id="u2" value="Within a few days">
+                    <label for="u2">Within a few days</label>
+                    <input type="radio" name="urgency" id="u3" value="Within a week" checked>
+                    <label for="u3">Within a week</label>
+                    <input type="radio" name="urgency" id="u4" value="Within a month">
+                    <label for="u4">Within a month</label>
+                    <input type="radio" name="urgency" id="u5" value="Just planning ahead">
+                    <label for="u5">Just planning ahead</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Section 2: Property & Budget ── -->
+        <div class="form-section">
+            <div class="section-label">
+                <div class="section-num">2</div>
+                <div class="section-title">Property &amp; budget</div>
+            </div>
+
+            <div class="field-grid-3">
+                <div class="field">
+                    <label>Property type</label>
+                    <select id="property_type">
+                        <option value="" disabled selected>Select type</option>
+                        <option value="Single-family home">Single-family home</option>
+                        <option value="Condo">Condo</option>
+                        <option value="Apartment">Apartment</option>
+                        <option value="Townhouse">Townhouse</option>
+                        <option value="Commercial">Commercial</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Home size (approx.)</label>
+                    <select id="home_size">
+                        <option value="" disabled selected>Select size</option>
+                        <option value="Under 1,000 sq ft">Under 1,000 sq ft</option>
+                        <option value="1,000–2,000 sq ft">1,000–2,000 sq ft</option>
+                        <option value="2,000–3,500 sq ft">2,000–3,500 sq ft</option>
+                        <option value="3,500+ sq ft">3,500+ sq ft</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>ZIP code <span class="req">*</span></label>
+                    <input type="text" id="zip_code" placeholder="e.g. 29302" maxlength="5">
+                </div>
+            </div>
+
+            <div class="field">
+                <label>Estimated budget range</label>
+                <div class="pill-group">
+                    <input type="radio" name="budget" id="b1" value="Under $500">
+                    <label for="b1">Under $500</label>
+                    <input type="radio" name="budget" id="b2" value="$500–$1,500">
+                    <label for="b2">$500–$1,500</label>
+                    <input type="radio" name="budget" id="b3" value="$1,500–$5,000">
+                    <label for="b3">$1,500–$5,000</label>
+                    <input type="radio" name="budget" id="b4" value="$5,000+">
+                    <label for="b4">$5,000+</label>
+                    <input type="radio" name="budget" id="b5" value="Not sure yet" checked>
+                    <label for="b5">Not sure yet</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Section 3: Your Account ── -->
+        <div class="form-section">
+            <div class="section-label">
+                <div class="section-num">3</div>
+                <div class="section-title">Create your free account</div>
+            </div>
+            <p style="font-size:0.875rem;color:var(--muted);margin-bottom:20px;">We'll use this to send you quotes and let you track your job progress.</p>
+
+            <div class="field-grid-2">
+                <div class="field">
+                    <label>Full name <span class="req">*</span></label>
+                    <input type="text" id="name" placeholder="Jane Smith">
+                </div>
+                <div class="field">
+                    <label>Phone number</label>
+                    <input type="tel" id="phone" placeholder="(864) 555-0192">
+                </div>
+            </div>
+            <div class="field">
+                <label>Email address <span class="req">*</span></label>
+                <input type="email" id="email" placeholder="jane@example.com">
+            </div>
+            <div class="field-grid-2">
+                <div class="field">
+                    <label>Password <span class="req">*</span></label>
+                    <input type="password" id="password" placeholder="Min. 6 characters">
+                </div>
+                <div class="field">
+                    <label>Confirm password <span class="req">*</span></label>
+                    <input type="password" id="confirm_password" placeholder="Re-enter password">
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Submit ── -->
+        <div class="submit-area">
+            <button class="btn-submit" id="submit-btn" onclick="submitQuote()">
+                <span>Get My Free Quotes</span> <span>→</span>
+            </button>
+            <p class="login-hint">Already have an account? <a href="login.html">Sign in here</a></p>
+        </div>
+
+        <div class="trust-strip">
+            <span>Free to use</span>
+            <span>Vetted contractors only</span>
+            <span>No spam calls</span>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        // Pre-fill service from URL param (when coming from hero form)
+        const params = new URLSearchParams(window.location.search);
+        const preService = params.get('service');
+        const preZip     = params.get('zip');
+        if (preService) {
+            const sel = document.getElementById('service');
+            for (let o of sel.options) {
+                if (o.value === preService) { sel.value = preService; break; }
+            }
+        }
+        if (preZip) document.getElementById('zip_code').value = preZip;
+
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icon = type === 'success' ? '✅' : '⚠️';
+            toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 4200);
+        }
+
+        async function submitQuote() {
+            const name     = document.getElementById('name').value.trim();
+            const email    = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirm  = document.getElementById('confirm_password').value;
+            const service  = document.getElementById('service').value;
+            const job_title   = document.getElementById('job_title').value.trim();
+            const description = document.getElementById('description').value.trim();
+            const zip_code    = document.getElementById('zip_code').value.trim();
+            const phone       = document.getElementById('phone').value.trim();
+            const property_type = document.getElementById('property_type').value;
+            const home_size     = document.getElementById('home_size').value;
+            const urgency  = document.querySelector('input[name="urgency"]:checked')?.value || null;
+            const budget_range = document.querySelector('input[name="budget"]:checked')?.value || null;
+
+            // Validation
+            if (!name)     return showToast('Please enter your full name.');
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+                return showToast('Please enter a valid email address.');
+            if (!service)  return showToast('Please select a service type.');
+            if (!job_title) return showToast('Please add a brief job title.');
+            if (!description || description.length < 20)
+                return showToast('Please describe your project in more detail (at least 20 characters).');
+            if (!zip_code) return showToast('Please enter your ZIP code.');
+            if (!password || password.length < 6)
+                return showToast('Password must be at least 6 characters.');
+            if (password !== confirm)
+                return showToast('Passwords do not match.');
+
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span>Submitting…</span>';
+
+            try {
+                const res = await fetch('/api/auth/register/homeowner', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name, email, password, phone,
+                        service, job_title, description,
+                        urgency, property_type, home_size,
+                        budget_range, zip_code
+                    })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    // Store session info
+                    localStorage.setItem('fixr_userId', data.userId);
+                    localStorage.setItem('fixr_role',   data.role);
+                    localStorage.setItem('fixr_name',   data.name);
+                    showToast('Account created! Taking you to your dashboard…', 'success');
+                    setTimeout(() => window.location.href = 'homeowner-dashboard.html', 1400);
+                } else {
+                    showToast(data.error || 'Something went wrong.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>Get My Free Quotes</span><span>→</span>';
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Could not connect to the server. Is it running?');
+                btn.disabled = false;
+                btn.innerHTML = '<span>Get My Free Quotes</span><span>→</span>';
+            }
+        }
+    </script>
+</body>
+</html>

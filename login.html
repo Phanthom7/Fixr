@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixr - Contractor Login</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream: #F5F0E8;
+            --ink: #141210;
+            --orange: #C85A2A;
+            --font-heading: 'Playfair Display', serif;
+            --font-body: 'DM Sans', sans-serif;
+            --transition: all 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--cream);
+            color: var(--ink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 440px;
+            padding: 20px;
+        }
+
+        .login-card {
+            background-color: #fff;
+            padding: 48px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(20, 18, 16, 0.08);
+            width: 100%;
+        }
+
+        .logo {
+            font-family: var(--font-heading);
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            text-align: center;
+            margin-bottom: 8px;
+            display: block;
+            text-decoration: none;
+            color: var(--ink);
+        }
+
+        .logo .accent {
+            color: var(--orange);
+            font-style: italic;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #6C665D;
+            font-size: 1rem;
+            margin-bottom: 32px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #6C665D;
+            margin-bottom: 8px;
+        }
+
+        .input-group input {
+            padding: 14px 16px;
+            border: 1px solid #DED8CE;
+            border-radius: 8px;
+            font-family: var(--font-body);
+            font-size: 1rem;
+            background-color: #FAFAF7;
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--orange);
+            background-color: #fff;
+        }
+
+        .forgot-link {
+            display: block;
+            text-align: right;
+            font-size: 0.875rem;
+            color: var(--orange);
+            text-decoration: none;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            font-family: var(--font-body);
+            font-weight: 500;
+            font-size: 1.125rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            background-color: var(--orange);
+            color: var(--cream);
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background-color: #A34821;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(200, 90, 42, 0.3);
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 24px;
+            font-size: 0.875rem;
+            color: #6C665D;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .back-link:hover {
+            color: var(--ink);
+        }
+
+        /* Toast Component */
+        #toast-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 1000;
+        }
+
+        .toast {
+            background-color: var(--ink);
+            color: #fff;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: var(--font-body);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.error {
+            border-left: 4px solid #E74C3C;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-wrapper">
+        <div class="login-card">
+            <a href="index.html" class="logo">Fix<span class="accent">r</span></a>
+            <p class="subtitle">Welcome back, Pro.</p>
+
+            <div class="input-group">
+                <label>Email Address</label>
+                <input type="email" id="email" placeholder="mike@example.com" onkeydown="if(event.key === 'Enter') handleLogin()">
+            </div>
+
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="••••••••" onkeydown="if(event.key === 'Enter') handleLogin()">
+            </div>
+
+            <a href="#" class="forgot-link">Forgot password?</a>
+
+            <button class="btn" onclick="handleLogin()">Sign In</button>
+            
+            <a href="index.html" class="back-link">&larr; Back to Fixr Home</a>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        // Show success toast if arriving from contractor application
+        if (localStorage.getItem('fixr_apply_success')) {
+            localStorage.removeItem('fixr_apply_success');
+            setTimeout(() => showToast('Application received! Sign in once approved.'), 300);
+        }
+
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type === 'error' ? 'error' : ''}`;
+            toast.innerHTML = `<span>${type === 'error' ? '⚠️' : 'ℹ️'}</span> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.add('show'); }, 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 3800);
+        }
+
+        async function handleLogin() {
+            const email    = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showToast('Please enter both email and password.');
+                return;
+            }
+
+            try {
+                const res  = await fetch('/api/auth/login', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    localStorage.setItem('fixr_userId', data.userId);
+                    localStorage.setItem('fixr_role',   data.role);
+                    localStorage.setItem('fixr_name',   data.name);
+                    
+                    if (data.subscription && data.subscription.plan) {
+                        localStorage.setItem('fixr_plan', data.subscription.plan);
+                    }
+
+                    if (data.role === 'contractor') {
+                        window.location.href = 'contractor-dashboard.html';
+                    } else if (data.role === 'homeowner') {
+                        window.location.href = 'homeowner-dashboard.html';
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                } else {
+                    showToast(data.error || 'Login failed.');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Could not connect to the server. Is it running?');
+            }
+        }
+    </script>
+</body>
+</html>

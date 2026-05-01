@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign up for Fixr</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream: #F5F0E8;
+            --ink: #141210;
+            --orange: #C85A2A;
+            --font-heading: 'Playfair Display', serif;
+            --font-body: 'DM Sans', sans-serif;
+            --transition: all 0.3s ease;
+            --border: #E0D9CE;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--ink);
+            color: var(--cream);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .signup-wrapper {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .logo {
+            font-family: var(--font-heading);
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            text-align: center;
+            margin-bottom: 32px;
+            display: block;
+            text-decoration: none;
+            color: var(--cream);
+        }
+
+        .logo .accent {
+            color: var(--orange);
+            font-style: italic;
+        }
+
+        .signup-card {
+            background-color: #1E1C19;
+            padding: 48px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            border: 1px solid #333;
+        }
+
+        .title {
+            font-family: var(--font-heading);
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            color: #A09B94;
+            margin-bottom: 32px;
+            font-size: 0.95rem;
+        }
+
+        /* Plan Selection */
+        .plan-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        
+        @media (max-width: 768px) {
+            .plan-selector { grid-template-columns: 1fr; }
+        }
+
+        .plan-card {
+            border: 2px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            background: #252320;
+            position: relative;
+        }
+
+        .plan-card:hover {
+            border-color: #555;
+        }
+
+        .plan-card.active {
+            border-color: var(--orange);
+            background: rgba(200, 90, 42, 0.1);
+        }
+
+        .plan-card.active::after {
+            content: "✓";
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--orange);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .plan-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+
+        .plan-price {
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            color: var(--orange);
+            margin-bottom: 8px;
+        }
+
+        .plan-desc {
+            font-size: 0.8rem;
+            color: #A09B94;
+            line-height: 1.4;
+        }
+
+        /* Form Fields */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 600px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #DED8CE;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group input,
+        .input-group select {
+            padding: 14px 16px;
+            border: 1px solid #444;
+            border-radius: 8px;
+            font-family: var(--font-body);
+            font-size: 1rem;
+            background-color: #141210;
+            color: var(--cream);
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: var(--orange);
+            box-shadow: 0 0 0 2px rgba(200, 90, 42, 0.2);
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            font-family: var(--font-body);
+            font-weight: 600;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            background-color: var(--orange);
+            color: #fff;
+            text-align: center;
+            margin-top: 32px;
+        }
+
+        .btn:hover {
+            background-color: #A34821;
+            transform: translateY(-2px);
+        }
+
+        .login-link {
+            display: block;
+            text-align: center;
+            margin-top: 24px;
+            font-size: 0.9rem;
+            color: #A09B94;
+            text-decoration: none;
+        }
+
+        .login-link a {
+            color: var(--orange);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Toast */
+        #toast-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 1000;
+        }
+        .toast {
+            background-color: #252320;
+            color: #fff;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: var(--font-body);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border: 1px solid #444;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.error { border-left: 4px solid #E74C3C; }
+        .toast.success { border-left: 4px solid #2ECC71; }
+    </style>
+</head>
+<body>
+
+    <div class="signup-wrapper">
+        <a href="index.html" class="logo">Fix<span class="accent">r</span></a>
+        
+        <div class="signup-card">
+            <h1 class="title">Start your 14-day free trial</h1>
+            <p class="subtitle">No credit card required. Upgrade or cancel anytime.</p>
+
+            <form id="signupForm" onsubmit="handleSignup(event)">
+                <!-- Plan Selection -->
+                <div class="plan-selector">
+                    <div class="plan-card" onclick="selectPlan('Starter')" id="plan-Starter">
+                        <div class="plan-name">Starter</div>
+                        <div class="plan-price">$29<span style="font-size:0.9rem;color:#A09B94;">/mo</span></div>
+                        <div class="plan-desc">Up to 20 active jobs. Core scheduling & quote builder.</div>
+                    </div>
+                    <div class="plan-card active" onclick="selectPlan('Pro')" id="plan-Pro">
+                        <div class="plan-name">Pro</div>
+                        <div class="plan-price">$69<span style="font-size:0.9rem;color:#A09B94;">/mo</span></div>
+                        <div class="plan-desc">Unlimited jobs, invoicing, AI estimates & homeowner leads.</div>
+                    </div>
+                    <div class="plan-card" onclick="selectPlan('Elite')" id="plan-Elite">
+                        <div class="plan-name">Business</div>
+                        <div class="plan-price">$129<span style="font-size:0.9rem;color:#A09B94;">/mo</span></div>
+                        <div class="plan-desc">Up to 5 crews, demand forecasting & API access.</div>
+                    </div>
+                </div>
+                
+                <input type="hidden" id="selectedPlan" value="Pro">
+
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Full Name</label>
+                        <input type="text" id="name" required placeholder="Mike Reynolds">
+                    </div>
+                    <div class="input-group">
+                        <label>Email Address</label>
+                        <input type="email" id="email" required placeholder="mike@example.com">
+                    </div>
+                    <div class="input-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="phone" required placeholder="(864) 555-0192">
+                    </div>
+                    <div class="input-group">
+                        <label>Primary Trade</label>
+                        <select id="trade" required>
+                            <option value="" disabled selected>Select trade</option>
+                            <option value="Plumbing">Plumbing</option>
+                            <option value="Electrical">Electrical</option>
+                            <option value="Painting">Painting</option>
+                            <option value="Flooring">Flooring</option>
+                            <option value="HVAC">HVAC</option>
+                            <option value="Carpentry">Carpentry</option>
+                            <option value="Roofing">Roofing</option>
+                            <option value="Landscaping">Landscaping</option>
+                            <option value="Appliance repair">Appliance repair</option>
+                            <option value="General handyman">General handyman</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Years of Exp. (Optional)</label>
+                        <input type="number" id="experience" placeholder="e.g. 5" min="0">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Password</label>
+                        <input type="password" id="password" required placeholder="Min. 6 characters">
+                    </div>
+                    <div class="input-group">
+                        <label>Confirm Password</label>
+                        <input type="password" id="confirm_password" required placeholder="Re-enter password">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn" id="submitBtn">Create Account</button>
+            </form>
+
+            <div class="login-link">
+                Already have an account? <a href="login.html">Sign in here</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        // Select plan UI
+        function selectPlan(plan) {
+            document.querySelectorAll('.plan-card').forEach(el => el.classList.remove('active'));
+            document.getElementById('plan-' + plan).classList.add('active');
+            document.getElementById('selectedPlan').value = plan;
+        }
+
+        // Pre-select plan from URL if present
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('plan')) {
+            const p = params.get('plan');
+            if (['Starter', 'Pro', 'Elite'].includes(p)) {
+                selectPlan(p);
+            }
+        }
+
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span>${type === 'success' ? '✅' : '⚠️'}</span> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 3800);
+        }
+
+        async function handleSignup(event) {
+            event.preventDefault();
+
+            const name     = document.getElementById('name').value.trim();
+            const email    = document.getElementById('email').value.trim();
+            const phone    = document.getElementById('phone').value.trim();
+            const trade    = document.getElementById('trade').value;
+            const password = document.getElementById('password').value;
+            const confirm  = document.getElementById('confirm_password').value;
+            const plan     = document.getElementById('selectedPlan').value;
+            const experience_years = document.getElementById('experience').value 
+                ? parseInt(document.getElementById('experience').value) : null;
+
+            if (password.length < 6) {
+                return showToast('Password must be at least 6 characters.');
+            }
+            if (password !== confirm) {
+                return showToast('Passwords do not match.');
+            }
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Creating Account...';
+
+            try {
+                const response = await fetch('/api/auth/register/contractor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password, phone, trade, experience_years, plan })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Auto-login or redirect to login. We'll set session info and go to dashboard.
+                    localStorage.setItem('fixr_userId', result.userId);
+                    localStorage.setItem('fixr_role', result.role);
+                    localStorage.setItem('fixr_name', result.name);
+                    localStorage.setItem('fixr_plan', result.plan);
+                    
+                    showToast('Account created! Redirecting to dashboard...', 'success');
+                    setTimeout(() => window.location.href = 'contractor-dashboard.html', 1500);
+                } else {
+                    showToast(result.error || 'Something went wrong.');
+                    btn.disabled = false;
+                    btn.textContent = 'Create Account';
+                }
+            } catch (error) {
+                console.error(error);
+                showToast('Failed to connect to the server.');
+                btn.disabled = false;
+                btn.textContent = 'Create Account';
+            }
+        }
+    </script>
+</body>
+</html>
