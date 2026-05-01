@@ -1195,48 +1195,66 @@
                 <div class="page-header" style="margin-bottom: 24px;">
                     <div>
                         <h2 style="font-family: var(--font-head); font-size: 1.5rem;">Active Jobs</h2>
-                        <div class="sub" style="color: var(--muted); font-size: 0.9rem;">Track progress on all your
-                            current work</div>
+                        <div class="sub" style="color: var(--muted); font-size: 0.9rem;">Manage and update statuses for your active jobs</div>
                     </div>
                 </div>
 
-                <div class="kanban-board" id="kanban-board">
-
-                    <div class="kanban-column" id="kcol-progress" data-stage="In Progress"
-                        ondrop="drop(event,'In Progress')" ondragover="allowDrop(event)" ondragenter="dragEnter(event)"
-                        ondragleave="dragLeave(event)">
-                        <div class="column-header">
-                            <div class="column-title">
-                                <div class="col-indicator ci-progress"></div> In Progress
-                            </div>
-                            <span class="column-count" id="cnt-progress">0</span>
-                        </div>
-                        <div class="column-body" id="col-progress"></div>
+                <div class="card">
+                    <div class="table-wrap">
+                        <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid var(--border-soft);">
+                                    <th style="padding: 12px; color: var(--muted); font-weight: 600;">Job Title</th>
+                                    <th style="padding: 12px; color: var(--muted); font-weight: 600;">Client</th>
+                                    <th style="padding: 12px; color: var(--muted); font-weight: 600;">Value</th>
+                                    <th style="padding: 12px; color: var(--muted); font-weight: 600;">Status</th>
+                                    <th style="padding: 12px; color: var(--muted); font-weight: 600; text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobs-list-container">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
                     </div>
+                </div>
+            </div>
 
-                    <div class="kanban-column" id="kcol-completed" data-stage="Completed"
-                        ondrop="drop(event,'Completed')" ondragover="allowDrop(event)" ondragenter="dragEnter(event)"
-                        ondragleave="dragLeave(event)">
-                        <div class="column-header">
-                            <div class="column-title">
-                                <div class="col-indicator ci-completed"></div> Completed
-                            </div>
-                            <span class="column-count" id="cnt-completed">0</span>
-                        </div>
-                        <div class="column-body" id="col-completed"></div>
+            <!-- ══ JOB DETAILS MODAL ══ -->
+            <div id="jobModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+                <div class="card" style="width: 100%; max-width: 540px; position: relative; margin: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+                    <button class="btn btn-ghost btn-sm" style="position: absolute; top: 12px; right: 12px; padding: 6px;" onclick="closeJobModal()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                    
+                    <div style="padding: 24px; border-bottom: 1px solid var(--border-soft);">
+                        <h2 id="modal-title" style="margin: 0; font-family: var(--font-head); font-size: 1.4rem;">Job Title</h2>
+                        <div id="modal-client" style="color: var(--muted); margin-top: 4px; font-size: 0.9rem;">Client Name</div>
                     </div>
-
-                    <div class="kanban-column" id="kcol-invoiced" data-stage="Invoiced" ondrop="drop(event,'Invoiced')"
-                        ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
-                        <div class="column-header">
-                            <div class="column-title">
-                                <div class="col-indicator ci-invoiced"></div> Invoiced
-                            </div>
-                            <span class="column-count" id="cnt-invoiced">0</span>
+                    
+                    <div style="padding: 24px; display: flex; flex-direction: column; gap: 20px; background: #fafaf7;">
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 8px;">Problem Description</div>
+                            <div id="modal-desc" style="color: var(--ink); line-height: 1.6; font-size: 0.95rem; background: #fff; padding: 16px; border-radius: 8px; border: 1px solid var(--border-soft);">No description provided.</div>
                         </div>
-                        <div class="column-body" id="col-invoiced"></div>
+                        
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 8px;">Items Required</div>
+                            <div id="modal-items" style="color: var(--ink); line-height: 1.6; font-size: 0.95rem; background: #fff; padding: 16px; border-radius: 8px; border: 1px solid var(--border-soft);">Standard parts kit.</div>
+                        </div>
+                        
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 8px;">Invoice / Bill</div>
+                            <div id="modal-value" style="font-size: 1.5rem; font-weight: 700; color: var(--green); background: #fff; padding: 16px; border-radius: 8px; border: 1px solid var(--border-soft);">$0.00</div>
+                        </div>
                     </div>
-
+                    
+                    <div style="padding: 16px 24px; border-top: 1px solid var(--border-soft); display: flex; justify-content: flex-end; gap: 12px; background: #fff;">
+                        <button class="btn btn-ghost" onclick="closeJobModal()">Close</button>
+                        <button class="btn btn-primary" onclick="toast('Messaging customer feature coming soon.')">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                            Message Customer
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -1500,101 +1518,71 @@
         }
 
         /* ══ KANBAN ══ */
-        let dragSrcId = null;
-
-        function drag(ev) {
-            dragSrcId = ev.currentTarget.id;
-            ev.dataTransfer.effectAllowed = 'move';
-            ev.dataTransfer.setData('text/plain', ev.currentTarget.id);
-            setTimeout(() => ev.currentTarget.classList.add('dragging'), 0);
-        }
-
-        function allowDrop(ev) { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; }
-
-        function dragEnter(ev) {
-            const col = ev.currentTarget.querySelector('.column-body');
-            if (col) col.classList.add('drag-over');
-        }
-        function dragLeave(ev) {
-            if (!ev.currentTarget.contains(ev.relatedTarget)) {
-                const col = ev.currentTarget.querySelector('.column-body');
-                if (col) col.classList.remove('drag-over');
+        /* ══ JOBS LIST & MODAL ══ */
+        window.currentJobs = [];
+        
+        function openJobModal(jobId) {
+            const job = window.currentJobs.find(j => j.id === jobId);
+            if (!job) return;
+            
+            document.getElementById('modal-title').textContent = job.title || 'Untitled Job';
+            document.getElementById('modal-client').textContent = job.client ? `Client: ${job.client}` : '';
+            document.getElementById('modal-desc').textContent = job.description || 'No description provided for this job.';
+            
+            // Dummy required items based on title since our DB might not have items_required yet
+            let items = 'Standard tools and inspection gear.';
+            const title = (job.title || '').toLowerCase();
+            if (title.includes('plumb') || title.includes('leak') || title.includes('faucet')) {
+                items = 'Wrench, replacement valves, PVC sealant, pipe cutter.';
+            } else if (title.includes('electric') || title.includes('wire')) {
+                items = '12-gauge wire, wire nuts, electrical tape, voltage tester.';
             }
+            document.getElementById('modal-items').textContent = job.items_required || items;
+            
+            document.getElementById('modal-value').textContent = job.value ? '$' + job.value.toLocaleString() : '$0.00';
+            
+            document.getElementById('jobModal').style.display = 'flex';
+        }
+        
+        function closeJobModal() {
+            document.getElementById('jobModal').style.display = 'none';
         }
 
-        function drop(ev, stageName) {
-            ev.preventDefault();
-            const id = ev.dataTransfer.getData('text/plain');
-            const card = document.getElementById(id);
-            if (!card) return;
-            card.classList.remove('dragging');
-
-            // Find the kanban-column ancestor of the drop target
-            let colEl = ev.target;
-            while (colEl && !colEl.classList.contains('kanban-column')) colEl = colEl.parentElement;
-            if (!colEl) return;
-
-            const body = colEl.querySelector('.column-body');
-            body.classList.remove('drag-over');
-            body.appendChild(card);
-            updateCounts();
-            toast(`Moved to ${stageName}`);
-
-            // Persist to backend (no-op in demo)
-            fetch(`/api/jobs/${id}/stage`, {
+        function updateJobStage(jobId, newStage) {
+            toast(`Status updated to ${newStage}`);
+            fetch(`/api/jobs/${jobId}/stage`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ stage: stageName, position: Array.from(body.children).indexOf(card) })
-            }).catch(() => { }); // silently ignore in demo / offline
+                body: JSON.stringify({ stage: newStage })
+            }).catch(() => { });
         }
 
-        // Restore opacity if card dragged outside any valid zone
-        document.addEventListener('dragend', ev => {
-            if (ev.target.classList.contains('job-card')) {
-                ev.target.classList.remove('dragging');
-                // Re-scan all column-bodies to remove drag-over
-                document.querySelectorAll('.column-body').forEach(b => b.classList.remove('drag-over'));
-            }
-        });
-
-        function updateCounts() {
-            const map = { 'new': 'new', 'scheduled': 'scheduled', 'progress': 'progress', 'completed': 'completed', 'invoiced': 'invoiced' };
-            Object.keys(map).forEach(key => {
-                const body = document.getElementById('col-' + key);
-                const cnt = document.getElementById('cnt-' + key);
-                if (body && cnt) cnt.textContent = body.querySelectorAll('.job-card').length;
+        function buildJobRow(job) {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid var(--border-soft)';
+            
+            let statusOptions = ['New', 'Scheduled', 'In Progress', 'Completed', 'Invoiced'];
+            let selectHtml = `<select onchange="updateJobStage('${job.id}', this.value)" style="padding: 6px; border-radius: 4px; border: 1px solid var(--border); font-size: 0.85rem; background: #fafaf7;">`;
+            statusOptions.forEach(s => {
+                selectHtml += `<option value="${s}" ${job.stage === s ? 'selected' : ''}>${s}</option>`;
             });
-        }
+            selectHtml += `</select>`;
 
-        function buildJobCard(job) {
-            const el = document.createElement('div');
-            el.className = 'job-card';
-            el.draggable = true;
-            // Sanitise ID: use data-job-id for non-alphanumeric safe IDs
-            const safeId = 'jcard-' + job.id.replace(/[^a-zA-Z0-9-_]/g, '_');
-            el.id = safeId;
-            el.dataset.jobId = job.id;
-            el.addEventListener('dragstart', drag);
-
-            let badgeHtml = '';
-            if (job.stage === 'New') badgeHtml = '<span class="badge badge-neutral">New</span>';
-            if (job.stage === 'Scheduled') badgeHtml = job.due_date ? `<span class="badge badge-blue">📅 ${job.due_date}</span>` : '<span class="badge badge-blue">Scheduled</span>';
-            if (job.stage === 'In Progress') badgeHtml = '<span class="badge badge-orange">On Site</span>';
-            if (job.stage === 'Completed') badgeHtml = '<span class="badge badge-amber">Needs Invoice</span>';
-            if (job.stage === 'Invoiced') badgeHtml = '<span class="badge badge-green">Sent</span>';
-
-            const valueHtml = job.value ? `<span class="job-value">$${job.value.toLocaleString()}</span>` : '';
-            const clientHtml = job.client ? `<div class="job-card-client">${escHtml(job.client)}</div>` : '';
-
-            el.innerHTML = `
-      <div class="job-card-title">${escHtml(job.title)}</div>
-      ${clientHtml}
-      <div class="job-card-footer">${badgeHtml}${valueHtml}</div>
-    `;
-            return el;
+            const val = job.value ? '$' + job.value.toLocaleString() : '-';
+            
+            tr.innerHTML = `
+                <td style="padding: 16px 12px; font-weight: 500; color: var(--ink);">${escHtml(job.title)}</td>
+                <td style="padding: 16px 12px; color: var(--muted);">${escHtml(job.client || '-')}</td>
+                <td style="padding: 16px 12px; font-weight: 600; color: var(--green);">${val}</td>
+                <td style="padding: 16px 12px;">${selectHtml}</td>
+                <td style="padding: 16px 12px; text-align: right;">
+                    <button class="btn btn-ghost btn-sm" onclick="openJobModal('${job.id}')">View Details</button>
+                </td>
+            `;
+            return tr;
         }
 
         /* ══ DATA LOADING ══ */
@@ -1611,25 +1599,20 @@
                     jobs = DEMO_JOBS; // Demo fallback
                 }
 
-                // Clear columns
-                ['new', 'scheduled', 'progress', 'completed', 'invoiced'].forEach(k => {
-                    const el = document.getElementById('col-' + k);
-                    if (el) el.innerHTML = '';
-                });
+                window.currentJobs = jobs; // Save for modal
 
-                const colMap = {
-                    'New': 'col-new', 'Scheduled': 'col-scheduled',
-                    'In Progress': 'col-progress', 'Completed': 'col-completed', 'Invoiced': 'col-invoiced'
-                };
-
-                jobs.forEach(job => {
-                    const colId = colMap[job.stage] || 'col-new';
-                    const col = document.getElementById(colId);
-                    if (col) col.appendChild(buildJobCard(job));
-                });
+                const container = document.getElementById('jobs-list-container');
+                if (container) {
+                    container.innerHTML = '';
+                    if (jobs.length === 0) {
+                        container.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 32px; color: var(--muted);">No active jobs found.</td></tr>`;
+                    } else {
+                        jobs.forEach(job => container.appendChild(buildJobRow(job)));
+                    }
+                }
 
                 document.getElementById('ov-jobs').textContent = jobs.length;
-                updateCounts();
+
             } catch {
                 // Demo mode fallback already handled above; swallow silently
             }
