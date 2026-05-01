@@ -45,7 +45,7 @@ async function seedData() {
     const jobsData = [
         { client_id: clientIds['Sarah Jenkins'], title: 'Leaking Water Heater', stage: 'New', priority: 'Urgent', value: null },
         { client_id: null, title: 'Kitchen Faucet Install (Tom Davis)', stage: 'New', priority: 'Normal', value: null },
-        { client_id: clientIds['Ellen Rossi'], title: 'Master Bath Re-pipe', stage: 'Scheduled', priority: 'Normal', value: 1250, due_date: 'Tomorrow, 9am' },
+        { client_id: clientIds['Ellen Rossi'], title: 'Master Bath Re-pipe', stage: 'Scheduled', priority: 'Normal', value: 1250, due_date: new Date(Date.now() + 86400000).toISOString() },
         { client_id: null, title: 'HVAC Annual Tune-up (Marcus Johnson)', stage: 'In Progress', priority: 'Normal', value: 250 },
         { client_id: clientIds['Dave Miller'], title: 'Sump Pump Replacement', stage: 'Completed', priority: 'Normal', value: 800 },
         { client_id: clientIds['Green Valley HOA'], title: 'Gas Line Repair', stage: 'Invoiced', priority: 'High', value: 450 }

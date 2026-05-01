@@ -5,6 +5,8 @@ const bcrypt  = require('bcryptjs');
 const admin   = require('firebase-admin');
 const path    = require('path');
 
+const jwt = require('jsonwebtoken');
+
 // ── Firebase Init ─────────────────────────────────────────────────────────────
 const serviceAccount = require(path.join(__dirname, 'firebase-service-account.json'));
 admin.initializeApp({
@@ -14,14 +16,36 @@ const db = admin.firestore();
 
 const app  = express();
 const port = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'fixr-super-secret-key';
 
 app.use(cors());
 app.use(express.json());
+app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        return res.status(400).json({ error: 'Malformed JSON' });
+    }
+    next();
+});
 
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, '../')));
 
 console.log('✅ Firebase Admin connected to project:', serviceAccount.project_id);
+
+// ── AUTH MIDDLEWARE ───────────────────────────────────────────────────────────
+const requireAuth = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
+    }
+    const token = authHeader.split(' ')[1];
+    try {
+        req.user = jwt.verify(token, JWT_SECRET);
+        next();
+    } catch (e) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+    }
+};
 
 // ── HEALTH ────────────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => res.json({ status: 'OK', db: 'Firestore' }));
@@ -70,12 +94,15 @@ app.post('/api/auth/register/homeowner', async (req, res) => {
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
+        const token = jwt.sign({ userId: userRef.id, role: 'homeowner' }, JWT_SECRET);
+
         res.status(201).json({
             message: 'Account created and request submitted!',
             userId:  userRef.id,
             leadId:  leadRef.id,
             role:    'homeowner',
-            name
+            name,
+            token
         });
     } catch (err) {
         console.error('Register homeowner error:', err);
@@ -126,13 +153,16 @@ app.post('/api/auth/register/contractor', async (req, res) => {
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
+        const token = jwt.sign({ userId: userRef.id, role: 'contractor' }, JWT_SECRET);
+
         res.status(201).json({
             message:      'Account created! Your 14-day free trial has started.',
             userId:       userRef.id,
             contractorId: contractorRef.id,
             plan:         selectedPlan,
             role:         'contractor',
-            name
+            name,
+            token
         });
     } catch (err) {
         console.error('Register contractor error:', err);
@@ -161,13 +191,16 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password.' });
         }
 
+        const token = jwt.sign({ userId: userDoc.id, role: user.role }, JWT_SECRET);
+
         res.json({
             message:      'Login successful',
             userId:       userDoc.id,
             role:         user.role,
             name:         user.name,
             status:       user.status,
-            subscription: user.subscription || null
+            subscription: user.subscription || null,
+            token
         });
     } catch (err) {
         console.error('Login error:', err);
@@ -176,7 +209,8 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // ── HOMEOWNER: GET THEIR LEADS ────────────────────────────────────────────────
-app.get('/api/homeowner/leads/:userId', async (req, res) => {
+app.get('/api/homeowner/leads/:userId', requireAuth, async (req, res) => {
+    if (req.user.userId !== req.params.userId) return res.status(403).json({ error: 'Forbidden' });
     try {
         const snap = await db.collection('leads')
             .where('userId', '==', req.params.userId)
@@ -192,7 +226,7 @@ app.get('/api/homeowner/leads/:userId', async (req, res) => {
 });
 
 // ── MESSAGES: GET FOR A LEAD ──────────────────────────────────────────────────
-app.get('/api/messages/:leadId', async (req, res) => {
+app.get('/api/messages/:leadId', requireAuth, async (req, res) => {
     try {
         const snap = await db.collection('messages')
             .where('lead_id', '==', req.params.leadId)
@@ -208,10 +242,13 @@ app.get('/api/messages/:leadId', async (req, res) => {
 });
 
 // ── MESSAGES: SEND ────────────────────────────────────────────────────────────
-app.post('/api/messages', async (req, res) => {
+app.post('/api/messages', requireAuth, async (req, res) => {
     const { lead_id, sender_id, receiver_id, body } = req.body;
     if (!lead_id || !sender_id || !receiver_id || !body) {
         return res.status(400).json({ error: 'lead_id, sender_id, receiver_id, and body are required.' });
+    }
+    if (req.user.userId !== sender_id) {
+        return res.status(403).json({ error: 'Forbidden: sender_id must match authenticated user.' });
     }
     try {
         const msgRef = await db.collection('messages').add({
@@ -226,7 +263,8 @@ app.post('/api/messages', async (req, res) => {
 });
 
 // ── LEADS: GET ALL OPEN (contractor browse) ───────────────────────────────────
-app.get('/api/leads', async (_req, res) => {
+app.get('/api/leads', requireAuth, async (req, res) => {
+    if (req.user.role !== 'contractor') return res.status(403).json({ error: 'Forbidden' });
     try {
         const snap = await db.collection('leads')
             .where('status', 'in', ['New', 'Open'])
@@ -242,9 +280,9 @@ app.get('/api/leads', async (_req, res) => {
 });
 
 // ── LEADS: ACCEPT (contractor claims lead) ────────────────────────────────────
-app.post('/api/leads/:id/accept', async (req, res) => {
-    const { contractor_user_id } = req.body;
-    if (!contractor_user_id) return res.status(400).json({ error: 'contractor_user_id is required.' });
+app.post('/api/leads/:id/accept', requireAuth, async (req, res) => {
+    const contractor_user_id = req.user.userId;
+    if (req.user.role !== 'contractor') return res.status(403).json({ error: 'Forbidden' });
 
     try {
         const leadRef = db.collection('leads').doc(req.params.id);
@@ -314,9 +352,8 @@ app.post('/api/leads/:id/accept', async (req, res) => {
 });
 
 // ── CLIENTS: LIST ─────────────────────────────────────────────────────────────
-app.get('/api/clients', async (req, res) => {
-    const { contractor_id } = req.query;
-    if (!contractor_id) return res.status(400).json({ error: 'contractor_id is required.' });
+app.get('/api/clients', requireAuth, async (req, res) => {
+    const contractor_id = req.user.userId;
     try {
         const snap = await db.collection('clients')
             .where('contractor_user_id', '==', contractor_id)
@@ -332,10 +369,11 @@ app.get('/api/clients', async (req, res) => {
 });
 
 // ── CLIENTS: CREATE ───────────────────────────────────────────────────────────
-app.post('/api/clients', async (req, res) => {
-    const { contractor_user_id, name, email, phone, address, notes, status } = req.body;
-    if (!contractor_user_id || !name) {
-        return res.status(400).json({ error: 'contractor_user_id and name are required.' });
+app.post('/api/clients', requireAuth, async (req, res) => {
+    const { name, email, phone, address, notes, status } = req.body;
+    const contractor_user_id = req.user.userId;
+    if (!name) {
+        return res.status(400).json({ error: 'name is required.' });
     }
     try {
         const ref = await db.collection('clients').add({
@@ -355,8 +393,9 @@ app.post('/api/clients', async (req, res) => {
 });
 
 // ── CLIENTS: UPDATE ───────────────────────────────────────────────────────────
-app.put('/api/clients/:id', async (req, res) => {
-    const { name, email, phone, address, notes, status, contractor_user_id } = req.body;
+app.put('/api/clients/:id', requireAuth, async (req, res) => {
+    const { name, email, phone, address, notes, status } = req.body;
+    const contractor_user_id = req.user.userId;
     try {
         const ref = db.collection('clients').doc(req.params.id);
         const doc = await ref.get();
@@ -372,8 +411,8 @@ app.put('/api/clients/:id', async (req, res) => {
 });
 
 // ── CLIENTS: DELETE ───────────────────────────────────────────────────────────
-app.delete('/api/clients/:id', async (req, res) => {
-    const { contractor_user_id } = req.body;
+app.delete('/api/clients/:id', requireAuth, async (req, res) => {
+    const contractor_user_id = req.user.userId;
     try {
         const ref = db.collection('clients').doc(req.params.id);
         const doc = await ref.get();
@@ -389,9 +428,8 @@ app.delete('/api/clients/:id', async (req, res) => {
 });
 
 // ── JOBS: LIST ────────────────────────────────────────────────────────────────
-app.get('/api/jobs', async (req, res) => {
-    const { contractor_id } = req.query;
-    if (!contractor_id) return res.status(400).json({ error: 'contractor_id is required.' });
+app.get('/api/jobs', requireAuth, async (req, res) => {
+    const contractor_id = req.user.userId;
     try {
         const snap = await db.collection('jobs')
             .where('contractor_user_id', '==', contractor_id)
@@ -407,10 +445,11 @@ app.get('/api/jobs', async (req, res) => {
 });
 
 // ── JOBS: CREATE ──────────────────────────────────────────────────────────────
-app.post('/api/jobs', async (req, res) => {
-    const { contractor_user_id, client_id, title, description, stage, value, due_date, trade, priority } = req.body;
-    if (!contractor_user_id || !title) {
-        return res.status(400).json({ error: 'contractor_user_id and title are required.' });
+app.post('/api/jobs', requireAuth, async (req, res) => {
+    const { client_id, title, description, stage, value, due_date, trade, priority } = req.body;
+    const contractor_user_id = req.user.userId;
+    if (!title) {
+        return res.status(400).json({ error: 'title is required.' });
     }
     try {
         const ref = await db.collection('jobs').add({
@@ -435,8 +474,9 @@ app.post('/api/jobs', async (req, res) => {
 });
 
 // ── JOBS: UPDATE ──────────────────────────────────────────────────────────────
-app.put('/api/jobs/:id', async (req, res) => {
-    const { contractor_user_id, title, description, stage, value, due_date, trade, priority, client_id, position } = req.body;
+app.put('/api/jobs/:id', requireAuth, async (req, res) => {
+    const { title, description, stage, value, due_date, trade, priority, client_id, position } = req.body;
+    const contractor_user_id = req.user.userId;
     try {
         const ref = db.collection('jobs').doc(req.params.id);
         const doc = await ref.get();
@@ -458,14 +498,19 @@ app.put('/api/jobs/:id', async (req, res) => {
 });
 
 // ── JOBS: STAGE UPDATE (kanban drag) ─────────────────────────────────────────
-app.patch('/api/jobs/:id/stage', async (req, res) => {
+app.patch('/api/jobs/:id/stage', requireAuth, async (req, res) => {
     const { stage, position } = req.body;
     const validStages = ['New', 'Scheduled', 'In Progress', 'Completed', 'Invoiced'];
     if (!validStages.includes(stage)) {
         return res.status(400).json({ error: 'Invalid stage.' });
     }
     try {
-        await db.collection('jobs').doc(req.params.id).update({
+        const ref = db.collection('jobs').doc(req.params.id);
+        const doc = await ref.get();
+        if (!doc.exists || doc.data().contractor_user_id !== req.user.userId) {
+            return res.status(403).json({ error: 'Not authorized.' });
+        }
+        await ref.update({
             stage,
             position: position || 0,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -478,8 +523,8 @@ app.patch('/api/jobs/:id/stage', async (req, res) => {
 });
 
 // ── JOBS: DELETE ──────────────────────────────────────────────────────────────
-app.delete('/api/jobs/:id', async (req, res) => {
-    const { contractor_user_id } = req.body;
+app.delete('/api/jobs/:id', requireAuth, async (req, res) => {
+    const contractor_user_id = req.user.userId;
     try {
         const ref = db.collection('jobs').doc(req.params.id);
         const doc = await ref.get();
@@ -495,9 +540,8 @@ app.delete('/api/jobs/:id', async (req, res) => {
 });
 
 // ── INVOICES: LIST ────────────────────────────────────────────────────────────
-app.get('/api/invoices', async (req, res) => {
-    const { contractor_id } = req.query;
-    if (!contractor_id) return res.status(400).json({ error: 'contractor_id is required.' });
+app.get('/api/invoices', requireAuth, async (req, res) => {
+    const contractor_id = req.user.userId;
     try {
         const snap = await db.collection('invoices')
             .where('contractor_user_id', '==', contractor_id)
@@ -513,7 +557,8 @@ app.get('/api/invoices', async (req, res) => {
 });
 
 // ── SUBSCRIPTIONS: GET ────────────────────────────────────────────────────────
-app.get('/api/subscriptions/:userId', async (req, res) => {
+app.get('/api/subscriptions/:userId', requireAuth, async (req, res) => {
+    if (req.user.userId !== req.params.userId) return res.status(403).json({ error: 'Forbidden' });
     try {
         const doc = await db.collection('users').doc(req.params.userId).get();
         if (!doc.exists) return res.status(404).json({ error: 'User not found.' });

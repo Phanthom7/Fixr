@@ -1,324 +1,1227 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard — Fixr</title>
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
     <style>
+        /* ── TOKENS ── */
         :root {
             --orange: #C85A2A;
-            --orange-hover: #A34821;
-            --orange-light: rgba(200, 90, 42, 0.1);
+            --orange-dim: #A34821;
+            --orange-tint: rgba(200, 90, 42, 0.08);
             --ink: #141210;
+            --ink-80: rgba(20, 18, 16, 0.80);
+            --ink-40: rgba(20, 18, 16, 0.40);
             --cream: #F5F0E8;
-            --bg-light: #F9F8F6;
-            --border: #E0D9CE;
+            --bg: #F8F6F2;
+            --surface: #FFFFFF;
+            --border: #E4DDD4;
+            --border-soft: #EDE8E0;
             --muted: #8C867D;
-            
-            --font-heading: 'Playfair Display', serif;
-            --font-body: 'DM Sans', sans-serif;
-            --transition: all 0.2s ease;
-            
-            --sidebar-width: 240px;
-            --topbar-height: 60px;
+            --green: #059669;
+            --green-tint: #D1FAE5;
+            --green-text: #065F46;
+            --amber-tint: #FEF3C7;
+            --amber-text: #92400E;
+            --blue-tint: #DBEAFE;
+            --blue-text: #1E40AF;
+
+            --font-head: 'Playfair Display', Georgia, serif;
+            --font-body: 'DM Sans', system-ui, sans-serif;
+
+            --sidebar-w: 232px;
+            --topbar-h: 58px;
+            --radius: 10px;
+            --radius-sm: 6px;
+            --shadow-sm: 0 1px 4px rgba(20, 18, 16, 0.06);
+            --shadow-md: 0 4px 16px rgba(20, 18, 16, 0.08);
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
         body {
             font-family: var(--font-body);
-            background: var(--bg-light);
+            background: var(--bg);
             color: var(--ink);
             display: flex;
             height: 100vh;
             overflow: hidden;
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
-
-        /* ── BUTTONS & UTILS ── */
-        .btn {
-            display: inline-flex; align-items: center; justify-content: center;
-            padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 0.875rem;
-            cursor: pointer; border: 1px solid transparent; transition: var(--transition);
-        }
-        .btn-primary { background: var(--orange); color: #fff; }
-        .btn-primary:hover { background: var(--orange-hover); }
-        .btn-outline { background: #fff; border-color: var(--border); color: var(--ink); }
-        .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
-        .btn-sm { padding: 4px 10px; font-size: 0.8rem; }
-
-        .flex-between { display: flex; justify-content: space-between; align-items: center; }
-        .gap-2 { gap: 8px; }
-        .gap-4 { gap: 16px; }
-
-        .badge {
-            padding: 2px 8px; border-radius: 100px; font-size: 0.75rem; font-weight: 600;
-        }
-        .badge-gray { background: #E5E7EB; color: #374151; }
-        .badge-blue { background: #DBEAFE; color: #1E40AF; }
-        .badge-yellow { background: #FEF3C7; color: #92400E; }
-        .badge-green { background: #D1FAE5; color: #065F46; }
 
         /* ── SIDEBAR ── */
         .sidebar {
-            width: var(--sidebar-width);
+            width: var(--sidebar-w);
             background: var(--ink);
-            color: var(--cream);
             display: flex;
             flex-direction: column;
-            border-right: 1px solid #333;
             flex-shrink: 0;
+            position: relative;
+            z-index: 10;
         }
+
+        /* subtle texture on sidebar */
+        .sidebar::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(135deg,
+                    transparent,
+                    transparent 24px,
+                    rgba(255, 255, 255, 0.012) 24px,
+                    rgba(255, 255, 255, 0.012) 25px);
+            pointer-events: none;
+        }
+
         .sidebar-header {
-            height: var(--topbar-height);
+            height: var(--topbar-h);
             display: flex;
             align-items: center;
             padding: 0 20px;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+            flex-shrink: 0;
         }
-        .logo { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 700; color: #fff; text-decoration: none; }
-        .logo .accent { color: var(--orange); font-style: italic; }
-        
-        .nav-menu { padding: 20px 12px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
-        .nav-item {
-            display: flex; align-items: center; gap: 12px;
-            padding: 10px 16px; border-radius: 8px;
-            color: #A09B94; text-decoration: none; font-size: 0.95rem; font-weight: 500;
-            transition: var(--transition); cursor: pointer; border: none; background: transparent; width: 100%; text-align: left;
-        }
-        .nav-item:hover { background: #252320; color: #fff; }
-        .nav-item.active { background: var(--orange); color: #fff; }
-        
-        .sidebar-footer { padding: 20px; border-top: 1px solid #333; }
-        .user-profile { display: flex; align-items: center; gap: 12px; }
-        .avatar { width: 32px; height: 32px; border-radius: 50%; background: #444; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem; }
-        .user-info { flex: 1; overflow: hidden; }
-        .user-name { font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .user-plan { font-size: 0.75rem; color: var(--orange); }
-        .logout-link { font-size: 0.8rem; color: #A09B94; text-decoration: none; display: block; margin-top: 8px; cursor:pointer;}
-        .logout-link:hover { color: #fff; }
 
-        /* ── MAIN CONTENT ── */
+        .logo {
+            font-family: var(--font-head);
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: #fff;
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+
+        .logo .r {
+            color: var(--orange);
+            font-style: italic;
+        }
+
+        .nav-section-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.25);
+            padding: 16px 20px 6px;
+        }
+
+        .nav-menu {
+            flex: 1;
+            padding: 10px 10px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 14px;
+            border-radius: 7px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background 0.15s var(--ease), color 0.15s var(--ease);
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            position: relative;
+        }
+
+        .nav-item svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            stroke-width: 1.75;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .nav-item.active {
+            background: var(--orange);
+            color: #fff;
+        }
+
+        .nav-item.active svg {
+            opacity: 1;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--orange);
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 20px;
+            line-height: 1.4;
+        }
+
+        .nav-item.active .nav-badge {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .sidebar-footer {
+            padding: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+            flex-shrink: 0;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 8px;
+            border-radius: var(--radius-sm);
+            transition: background 0.15s;
+            cursor: pointer;
+        }
+
+        .user-profile:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--orange), #E8855A);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: #fff;
+            flex-shrink: 0;
+            letter-spacing: 0.02em;
+        }
+
+        .user-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 0.82rem;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-plan {
+            font-size: 0.72rem;
+            color: var(--orange);
+            margin-top: 1px;
+        }
+
+        .sign-out-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 6px 8px;
+            margin-top: 4px;
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.3);
+            background: none;
+            border: none;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            transition: color 0.15s;
+            font-family: var(--font-body);
+        }
+
+        .sign-out-btn:hover {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* ── MAIN ── */
         .main-wrapper {
             flex: 1;
             display: flex;
             flex-direction: column;
             min-width: 0;
         }
+
         .topbar {
-            height: var(--topbar-height);
-            background: #fff;
+            height: var(--topbar-h);
+            background: var(--surface);
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 24px;
+            flex-shrink: 0;
         }
-        .page-title { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 600; }
-        
+
+        .page-title {
+            font-family: var(--font-head);
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: var(--ink);
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         .content {
             flex: 1;
             overflow-y: auto;
             padding: 24px;
-            background: var(--bg-light);
         }
 
-        /* View Panels */
-        .view-panel { display: none; height: 100%; flex-direction: column; }
-        .view-panel.active { display: flex; }
-
-        /* ── KANBAN PIPELINE ── */
-        .kanban-board {
-            display: flex;
-            gap: 16px;
-            height: 100%;
-            overflow-x: auto;
-            padding-bottom: 16px;
-            align-items: flex-start;
+        /* ── BUTTONS ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-body);
+            font-weight: 500;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: background 0.15s var(--ease), border-color 0.15s, color 0.15s, box-shadow 0.15s;
+            white-space: nowrap;
+            text-decoration: none;
         }
-        .kanban-column {
-            background: #F4F2EC;
-            border-radius: 12px;
-            min-width: 280px;
-            width: 280px;
-            max-height: 100%;
-            display: flex;
+
+        .btn-primary {
+            background: var(--orange);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--orange-dim);
+            box-shadow: 0 2px 8px rgba(200, 90, 42, 0.3);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border-color: var(--border);
+            color: var(--ink-80);
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--orange);
+            color: var(--orange);
+            background: var(--orange-tint);
+        }
+
+        .btn-sm {
+            padding: 5px 11px;
+            font-size: 0.78rem;
+        }
+
+        /* ── BADGES ── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            line-height: 1.5;
+        }
+
+        .badge-neutral {
+            background: #F0EDE8;
+            color: var(--muted);
+        }
+
+        .badge-blue {
+            background: var(--blue-tint);
+            color: var(--blue-text);
+        }
+
+        .badge-amber {
+            background: var(--amber-tint);
+            color: var(--amber-text);
+        }
+
+        .badge-green {
+            background: var(--green-tint);
+            color: var(--green-text);
+        }
+
+        .badge-orange {
+            background: var(--orange-tint);
+            color: var(--orange);
+        }
+
+        /* ── VIEW PANELS ── */
+        .view-panel {
+            display: none;
             flex-direction: column;
-            border: 1px solid var(--border);
+            gap: 20px;
+            animation: fadeIn 0.18s var(--ease);
         }
-        .column-header {
-            padding: 12px 16px;
+
+        .view-panel.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── STAT CARDS ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--border-soft);
+        }
+
+        .stat-card.accent::before {
+            background: var(--orange);
+        }
+
+        .stat-card.positive::before {
+            background: var(--green);
+        }
+
+        .stat-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-family: var(--font-head);
+            font-size: 1.85rem;
+            font-weight: 700;
+            color: var(--ink);
+            line-height: 1;
+        }
+
+        .stat-value.orange {
+            color: var(--orange);
+        }
+
+        .stat-value.green {
+            color: var(--green);
+        }
+
+        .stat-sub {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 5px;
+        }
+
+        .stat-sub.up {
+            color: var(--green);
+        }
+
+        .stat-sub.down {
+            color: #DC2626;
+        }
+
+        /* ── CARD PANEL ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-soft);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
             font-weight: 600;
             font-size: 0.9rem;
+            color: var(--ink);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* ── OVERVIEW ACTIVITY LIST ── */
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 13px 20px;
+            border-bottom: 1px solid var(--border-soft);
+            transition: background 0.12s;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-item:hover {
+            background: var(--bg);
+        }
+
+        .activity-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .dot-orange {
+            background: var(--orange);
+        }
+
+        .dot-green {
+            background: var(--green);
+        }
+
+        .dot-blue {
+            background: #3B82F6;
+        }
+
+        .dot-amber {
+            background: #F59E0B;
+        }
+
+        .activity-text {
+            flex: 1;
+            font-size: 0.875rem;
+            color: var(--ink-80);
+        }
+
+        .activity-text strong {
+            color: var(--ink);
+            font-weight: 600;
+        }
+
+        .activity-time {
+            font-size: 0.75rem;
+            color: var(--muted);
+            flex-shrink: 0;
+        }
+
+        /* ── KANBAN ── */
+        .kanban-board {
+            display: flex;
+            gap: 14px;
+            overflow-x: auto;
+            align-items: flex-start;
+            padding-bottom: 8px;
+        }
+
+        .kanban-column {
+            background: var(--cream);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 272px;
+            min-width: 272px;
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - var(--topbar-h) - 96px);
+        }
+
+        .column-header {
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .column-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .col-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .ci-new {
+            background: #9CA3AF;
+        }
+
+        .ci-scheduled {
+            background: #3B82F6;
+        }
+
+        .ci-progress {
+            background: var(--orange);
+        }
+
+        .ci-completed {
+            background: var(--green);
+        }
+
+        .ci-invoiced {
+            background: #F59E0B;
+        }
+
+        .column-count {
+            background: rgba(20, 18, 16, 0.08);
+            color: var(--ink-80);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .column-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 80px;
+        }
+
+        .column-body.drag-over {
+            background: var(--orange-tint);
+        }
+
+        .job-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            box-shadow: var(--shadow-sm);
+            cursor: grab;
+            transition: box-shadow 0.15s, transform 0.15s;
+        }
+
+        .job-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .job-card.dragging {
+            opacity: 0.4;
+            cursor: grabbing;
+        }
+
+        .job-card-title {
+            font-weight: 600;
+            font-size: 0.88rem;
+            margin-bottom: 3px;
+            line-height: 1.3;
+        }
+
+        .job-card-client {
+            font-size: 0.775rem;
+            color: var(--muted);
+            margin-bottom: 9px;
+        }
+
+        .job-card-footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        .job-value {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--green);
+        }
+
+        /* ── CLIENTS TABLE ── */
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            background: var(--bg);
+            padding: 10px 16px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
             border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+            text-align: left;
         }
-        .column-count {
-            background: #E0D9CE; color: var(--ink); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;
+
+        tbody td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-soft);
+            font-size: 0.875rem;
+            color: var(--ink-80);
         }
-        .column-body {
-            padding: 12px;
-            overflow-y: auto;
-            flex: 1;
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover td {
+            background: var(--bg);
+            cursor: pointer;
+        }
+
+        .td-name {
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .td-sub {
+            font-size: 0.78rem;
+            color: var(--muted);
+            display: block;
+            margin-top: 2px;
+        }
+
+        .td-bold {
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        /* ── CHARTS ── */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 3fr 2fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 1100px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 220px;
+        }
+
+        /* ── LEADS ── */
+        .leads-list {
             display: flex;
             flex-direction: column;
             gap: 12px;
-            min-height: 100px;
         }
-        .job-card {
-            background: #fff;
+
+        .lead-card {
+            background: var(--surface);
             border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            transition: box-shadow 0.15s;
+        }
+
+        .lead-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .lead-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .lead-service {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--orange);
+            margin-bottom: 4px;
+        }
+
+        .lead-title {
+            font-family: var(--font-head);
+            font-weight: 700;
+            font-size: 1.05rem;
+            margin-bottom: 6px;
+        }
+
+        .lead-meta {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-bottom: 8px;
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .lead-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .lead-desc {
+            font-size: 0.875rem;
+            color: var(--ink-80);
+            line-height: 1.5;
+        }
+
+        .lead-action {
+            flex-shrink: 0;
+        }
+
+        /* ── EMPTY / PLACEHOLDER ── */
+        .placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 40px;
+            gap: 12px;
+            text-align: center;
+        }
+
+        .placeholder-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--orange-tint);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--orange);
+            margin-bottom: 4px;
+        }
+
+        .placeholder-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--ink);
+        }
+
+        .placeholder-sub {
+            font-size: 0.85rem;
+            color: var(--muted);
+            max-width: 300px;
+            line-height: 1.5;
+        }
+
+        /* ── SKELETON ── */
+        .skeleton {
+            background: linear-gradient(90deg, var(--border-soft) 25%, var(--border) 50%, var(--border-soft) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes shimmer {
+            to {
+                background-position: -200% center;
+            }
+        }
+
+        /* ── TOAST ── */
+        #toast-root {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .toast {
+            background: var(--ink);
+            color: #fff;
+            padding: 10px 18px;
             border-radius: 8px;
-            padding: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            cursor: grab;
+            font-size: 0.85rem;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+            opacity: 0;
+            transform: translateY(6px);
+            transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+            max-width: 320px;
+            line-height: 1.4;
         }
-        .job-card:active { cursor: grabbing; }
-        .job-card-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; }
-        .job-card-client { font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; display:flex; align-items:center; gap:4px; }
-        .job-card-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; }
-        .job-value { font-weight: 600; color: #059669; }
 
-        /* ── CRM CLIENTS ── */
-        .card-panel {
-            background: #fff; border: 1px solid var(--border); border-radius: 12px;
-            overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
         }
-        .table-wrap { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th { background: #FAFAF7; padding: 12px 16px; font-size: 0.8rem; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
-        td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-        tr:last-child td { border-bottom: none; }
-        tr:hover td { background: #FAFAF7; cursor: pointer; }
-        .client-name { font-weight: 600; color: var(--ink); }
-        .client-contact { font-size: 0.8rem; color: var(--muted); display: block; }
 
-        /* ── ANALYTICS ── */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-        .stat-card { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
-        .stat-title { font-size: 0.85rem; color: var(--muted); font-weight: 600; margin-bottom: 8px; text-transform: uppercase; }
-        .stat-value { font-family: var(--font-heading); font-size: 2rem; font-weight: 700; color: var(--ink); }
-        
-        .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
-        @media (max-width: 1024px) { .charts-grid { grid-template-columns: 1fr; } }
-        .chart-container { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
-        .chart-header { font-weight: 600; margin-bottom: 16px; }
+        .toast.success {
+            background: #065F46;
+        }
 
-        /* Toast */
-        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
-        .toast { background: var(--ink); color: #fff; padding: 12px 20px; border-radius: 8px; margin-top: 10px; opacity: 0; transition: opacity 0.3s; font-size: 0.9rem; }
-        .toast.show { opacity: 1; }
+        .toast.error {
+            background: #991B1B;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--muted);
+        }
     </style>
 </head>
+
 <body>
 
-    <!-- Sidebar -->
+    <!-- ══ SIDEBAR ══ -->
     <aside class="sidebar">
         <div class="sidebar-header">
-            <a href="#" class="logo">Fix<span class="accent">r</span></a>
+            <a href="#" class="logo">Fix<span class="r">r</span></a>
         </div>
-        <nav class="nav-menu">
-            <button class="nav-item active" data-view="pipeline" onclick="switchView('pipeline')">📋 Pipeline</button>
-            <button class="nav-item" data-view="clients" onclick="switchView('clients')">👥 Clients</button>
-            <button class="nav-item" data-view="analytics" onclick="switchView('analytics')">📈 Earnings</button>
-            <button class="nav-item" data-view="quotes" onclick="switchView('quotes')">📝 Quotes & Invoices</button>
-            <button class="nav-item" data-view="leads" onclick="switchView('leads')">🔔 Homeowner Leads <span class="badge badge-yellow" style="margin-left:auto">2</span></button>
+
+        <nav class="nav-menu" role="navigation" aria-label="Main navigation">
+            <!-- SVG icons inline for crisp rendering at small sizes -->
+            <button class="nav-item active" data-view="overview" onclick="switchView('overview')" aria-current="page">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="3" y="3" width="7" height="7" rx="1" />
+                    <rect x="14" y="3" width="7" height="7" rx="1" />
+                    <rect x="3" y="14" width="7" height="7" rx="1" />
+                    <rect x="14" y="14" width="7" height="7" rx="1" />
+                </svg>
+                Overview
+            </button>
+            <button class="nav-item" data-view="pipeline" onclick="switchView('pipeline')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+                    <rect x="9" y="3" width="6" height="4" rx="1" />
+                    <path d="M9 12h6M9 16h4" />
+                </svg>
+                Current Work
+            </button>
+            <button class="nav-item" data-view="leads" onclick="switchView('leads')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 01-3.46 0" />
+                </svg>
+                New Leads
+                <span class="nav-badge" id="leads-nav-badge" style="display:none"></span>
+            </button>
+            <button class="nav-item" data-view="clients" onclick="switchView('clients')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                </svg>
+                Clients
+            </button>
+            <button class="nav-item" data-view="quotes" onclick="switchView('quotes')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                    <polyline points="14,2 14,8 20,8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10,9 9,9 8,9" />
+                </svg>
+                Quote Builder
+            </button>
+            <button class="nav-item" data-view="analytics" onclick="switchView('analytics')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="22,12 18,12 15,21 9,3 6,12 2,12" />
+                </svg>
+                Earnings
+            </button>
+            <button class="nav-item" data-view="schedule" onclick="switchView('schedule')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                Schedule
+            </button>
+            <button class="nav-item" data-view="reviews" onclick="switchView('reviews')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polygon
+                        points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                </svg>
+                Reviews
+            </button>
         </nav>
+
         <div class="sidebar-footer">
             <div class="user-profile">
-                <div class="avatar" id="userInitials">MR</div>
+                <div class="avatar" id="userInitials" aria-hidden="true">MR</div>
                 <div class="user-info">
                     <div class="user-name" id="userName">Mike Reynolds</div>
                     <div class="user-plan" id="userPlan">Starter Plan</div>
                 </div>
             </div>
-            <a href="#" class="logout-link" onclick="logout()">Sign Out</a>
+            <button class="sign-out-btn" onclick="logout()">Sign out</button>
         </div>
     </aside>
 
-    <!-- Main Content -->
+    <!-- ══ MAIN ══ -->
     <main class="main-wrapper">
         <header class="topbar">
-            <h1 class="page-title" id="pageTitle">Pipeline</h1>
-            <div class="topbar-actions">
-                <button class="btn btn-primary" onclick="showToast('New record functionality coming soon.')">+ New Job</button>
+            <h1 class="page-title" id="pageTitle">Overview</h1>
+            <div class="topbar-right">
+                <button class="btn btn-ghost btn-sm" onclick="toast('Feature coming soon.')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                    </svg>
+                    Search
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="toast('New job form coming soon.')">
+                    + New Job
+                </button>
             </div>
         </header>
 
-        <section class="content">
-            
-            <!-- PIPELINE VIEW -->
-            <div id="view-pipeline" class="view-panel active">
-                <div class="kanban-board">
-                    
-                    <!-- Col: New -->
-                    <div class="kanban-column" ondrop="drop(event, 'New')" ondragover="allowDrop(event)">
-                        <div class="column-header">
-                            <span>New</span>
-                            <span class="column-count">2</span>
+        <section class="content" id="main-content">
+
+            <!-- ══ OVERVIEW ══ -->
+            <div id="view-overview" class="view-panel active">
+                <div class="stats-grid">
+                    <div class="stat-card accent">
+                        <div class="stat-label">Open Jobs</div>
+                        <div class="stat-value" id="ov-jobs">—</div>
+                        <div class="stat-sub">across all stages</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">New Leads</div>
+                        <div class="stat-value" id="ov-leads">—</div>
+                        <div class="stat-sub">waiting for response</div>
+                    </div>
+                    <div class="stat-card accent">
+                        <div class="stat-label">Unpaid Invoices</div>
+                        <div class="stat-value orange">$1,250</div>
+                        <div class="stat-sub">2 invoices outstanding</div>
+                    </div>
+                    <div class="stat-card positive">
+                        <div class="stat-label">This Week's Revenue</div>
+                        <div class="stat-value green">$2,750</div>
+                        <div class="stat-sub up">↑ 12% vs last week</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Recent Activity</span>
+                        <button class="btn btn-ghost btn-sm">View all</button>
+                    </div>
+                    <div class="activity-list">
+                        <div class="activity-item">
+                            <div class="activity-dot dot-green"></div>
+                            <div class="activity-text"><strong>Bathroom faucet repair</strong> marked completed — Sarah
+                                M.</div>
+                            <div class="activity-time">2h ago</div>
                         </div>
-                        <div class="column-body" id="col-new">
+                        <div class="activity-item">
+                            <div class="activity-dot dot-orange"></div>
+                            <div class="activity-text"><strong>New lead:</strong> Kitchen plumbing rough-in · ZIP 29301
+                            </div>
+                            <div class="activity-time">4h ago</div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-dot dot-blue"></div>
+                            <div class="activity-text"><strong>Invoice #0014</strong> sent to Tom W. for $850</div>
+                            <div class="activity-time">Yesterday</div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-dot dot-amber"></div>
+                            <div class="activity-text"><strong>Review received:</strong> "Fantastic work, will book
+                                again" — 5★</div>
+                            <div class="activity-time">Yesterday</div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-dot dot-green"></div>
+                            <div class="activity-text"><strong>Payment received</strong> $475 from Carol J.</div>
+                            <div class="activity-time">2 days ago</div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Col: Scheduled -->
-                    <div class="kanban-column" ondrop="drop(event, 'Scheduled')" ondragover="allowDrop(event)">
+            <!-- ══ PIPELINE ══ -->
+            <div id="view-pipeline" class="view-panel">
+                <div class="kanban-board" id="kanban-board">
+
+                    <div class="kanban-column" id="kcol-new" data-stage="New" ondrop="drop(event,'New')"
+                        ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
                         <div class="column-header">
-                            <span>Scheduled</span>
-                            <span class="column-count">1</span>
+                            <div class="column-title">
+                                <div class="col-indicator ci-new"></div> New
+                            </div>
+                            <span class="column-count" id="cnt-new">0</span>
                         </div>
-                        <div class="column-body" id="col-scheduled">
-                        </div>
+                        <div class="column-body" id="col-new"></div>
                     </div>
 
-                    <!-- Col: In Progress -->
-                    <div class="kanban-column" ondrop="drop(event, 'In Progress')" ondragover="allowDrop(event)">
+                    <div class="kanban-column" id="kcol-scheduled" data-stage="Scheduled"
+                        ondrop="drop(event,'Scheduled')" ondragover="allowDrop(event)" ondragenter="dragEnter(event)"
+                        ondragleave="dragLeave(event)">
                         <div class="column-header">
-                            <span>In Progress</span>
-                            <span class="column-count">1</span>
+                            <div class="column-title">
+                                <div class="col-indicator ci-scheduled"></div> Scheduled
+                            </div>
+                            <span class="column-count" id="cnt-scheduled">0</span>
                         </div>
-                        <div class="column-body" id="col-progress">
-                        </div>
+                        <div class="column-body" id="col-scheduled"></div>
                     </div>
 
-                    <!-- Col: Completed -->
-                    <div class="kanban-column" ondrop="drop(event, 'Completed')" ondragover="allowDrop(event)">
+                    <div class="kanban-column" id="kcol-progress" data-stage="In Progress"
+                        ondrop="drop(event,'In Progress')" ondragover="allowDrop(event)" ondragenter="dragEnter(event)"
+                        ondragleave="dragLeave(event)">
                         <div class="column-header">
-                            <span>Completed</span>
-                            <span class="column-count">1</span>
+                            <div class="column-title">
+                                <div class="col-indicator ci-progress"></div> In Progress
+                            </div>
+                            <span class="column-count" id="cnt-progress">0</span>
                         </div>
-                        <div class="column-body" id="col-completed">
-                        </div>
+                        <div class="column-body" id="col-progress"></div>
                     </div>
 
-                    <!-- Col: Invoiced -->
-                    <div class="kanban-column" ondrop="drop(event, 'Invoiced')" ondragover="allowDrop(event)">
+                    <div class="kanban-column" id="kcol-completed" data-stage="Completed"
+                        ondrop="drop(event,'Completed')" ondragover="allowDrop(event)" ondragenter="dragEnter(event)"
+                        ondragleave="dragLeave(event)">
                         <div class="column-header">
-                            <span>Invoiced / Waiting Pmt</span>
-                            <span class="column-count">1</span>
+                            <div class="column-title">
+                                <div class="col-indicator ci-completed"></div> Completed
+                            </div>
+                            <span class="column-count" id="cnt-completed">0</span>
                         </div>
-                        <div class="column-body" id="col-invoiced">
+                        <div class="column-body" id="col-completed"></div>
+                    </div>
+
+                    <div class="kanban-column" id="kcol-invoiced" data-stage="Invoiced" ondrop="drop(event,'Invoiced')"
+                        ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+                        <div class="column-header">
+                            <div class="column-title">
+                                <div class="col-indicator ci-invoiced"></div> Invoiced
+                            </div>
+                            <span class="column-count" id="cnt-invoiced">0</span>
                         </div>
+                        <div class="column-body" id="col-invoiced"></div>
                     </div>
 
                 </div>
             </div>
 
-            <!-- CLIENTS CRM VIEW -->
+            <!-- ══ LEADS ══ -->
+            <div id="view-leads" class="view-panel">
+                <div id="leads-list-container" class="leads-list">
+                    <div class="card">
+                        <div class="placeholder">
+                            <div class="placeholder-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="1.75">
+                                    <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                    <path d="M13.73 21a2 2 0 01-3.46 0" />
+                                </svg>
+                            </div>
+                            <div class="placeholder-title">Loading leads…</div>
+                            <div class="placeholder-sub">Fetching available jobs in your area.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ CLIENTS ══ -->
             <div id="view-clients" class="view-panel">
-                <div class="card-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">All Clients</span>
+                        <button class="btn btn-ghost btn-sm">+ Add Client</button>
+                    </div>
                     <div class="table-wrap">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Client Name</th>
+                                    <th>Name</th>
                                     <th>Contact</th>
                                     <th>Address</th>
                                     <th>Total Jobs</th>
@@ -327,59 +1230,119 @@
                                 </tr>
                             </thead>
                             <tbody id="clients-tbody">
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="placeholder">
+                                            <div class="placeholder-title">Loading clients…</div>
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- ANALYTICS VIEW -->
+            <!-- ══ ANALYTICS ══ -->
             <div id="view-analytics" class="view-panel">
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-title">This Week's Revenue</div>
-                        <div class="stat-value">$2,750</div>
-                        <div style="font-size:0.8rem; color:#059669; margin-top:4px;">↑ 12% vs last week</div>
+                    <div class="stat-card positive">
+                        <div class="stat-label">This Week's Revenue</div>
+                        <div class="stat-value green">$2,750</div>
+                        <div class="stat-sub up">↑ 12% vs last week</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-title">Jobs Completed</div>
+                        <div class="stat-label">Jobs Completed</div>
                         <div class="stat-value">8</div>
+                        <div class="stat-sub">this month</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-title">Avg. Job Size</div>
+                        <div class="stat-label">Avg. Job Size</div>
                         <div class="stat-value">$343</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-title">Unpaid Invoices</div>
-                        <div class="stat-value" style="color:var(--orange)">$1,250</div>
+                    <div class="stat-card accent">
+                        <div class="stat-label">Unpaid Invoices</div>
+                        <div class="stat-value orange">$1,250</div>
+                        <div class="stat-sub">2 invoices due</div>
                     </div>
                 </div>
 
                 <div class="charts-grid">
-                    <div class="chart-container">
-                        <div class="chart-header">Revenue (Last 30 Days)</div>
-                        <canvas id="revenueChart" height="250"></canvas>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Revenue — Last 30 Days</span></div>
+                        <div class="card-body">
+                            <div class="chart-wrap"><canvas id="revenueChart"></canvas></div>
+                        </div>
                     </div>
-                    <div class="chart-container">
-                        <div class="chart-header">Jobs by Service Type</div>
-                        <canvas id="serviceChart" height="250"></canvas>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Jobs by Service Type</span></div>
+                        <div class="card-body">
+                            <div class="chart-wrap"><canvas id="serviceChart"></canvas></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- PLACEHOLDER VIEWS -->
+            <!-- ══ QUOTE BUILDER ══ -->
             <div id="view-quotes" class="view-panel">
-                <div style="text-align:center; padding: 60px; color: var(--muted);">
-                    <h2>Quote & Invoice Builder</h2>
-                    <p>Coming soon. Create line-item quotes and turn them into invoices instantly.</p>
+                <div class="card">
+                    <div class="placeholder">
+                        <div class="placeholder-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.75">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                <polyline points="14,2 14,8 20,8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                            </svg>
+                        </div>
+                        <div class="placeholder-title">Quote &amp; Invoice Builder</div>
+                        <div class="placeholder-sub">Create line-item quotes and convert them to invoices instantly.
+                            Coming in the next update.</div>
+                        <button class="btn btn-ghost btn-sm"
+                            onclick="toast('We\'ll notify you when this is ready.')">Notify me</button>
+                    </div>
                 </div>
             </div>
 
-            <div id="view-leads" class="view-panel">
-                <div class="card-panel">
-                    <h2 style="margin-bottom: 20px; font-family: var(--font-heading);">Available Leads</h2>
-                    <div id="contractor-leads-container">
-                        <div style="text-align:center; padding: 60px; color: var(--muted);">Loading leads...</div>
+            <!-- ══ SCHEDULE ══ -->
+            <div id="view-schedule" class="view-panel">
+                <div class="card">
+                    <div class="placeholder">
+                        <div class="placeholder-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.75">
+                                <rect x="3" y="4" width="18" height="18" rx="2" />
+                                <line x1="16" y1="2" x2="16" y2="6" />
+                                <line x1="8" y1="2" x2="8" y2="6" />
+                                <line x1="3" y1="10" x2="21" y2="10" />
+                            </svg>
+                        </div>
+                        <div class="placeholder-title">Schedule &amp; Dispatch</div>
+                        <div class="placeholder-sub">View upcoming appointments and assign jobs to team members.
+                            Launching soon.</div>
+                        <button class="btn btn-ghost btn-sm"
+                            onclick="toast('We\'ll notify you when this is ready.')">Notify me</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ REVIEWS ══ -->
+            <div id="view-reviews" class="view-panel">
+                <div class="card">
+                    <div class="placeholder">
+                        <div class="placeholder-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.75">
+                                <polygon
+                                    points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                            </svg>
+                        </div>
+                        <div class="placeholder-title">Review Management</div>
+                        <div class="placeholder-sub">Monitor your reputation, respond to reviews, and send review
+                            requests to past clients.</div>
+                        <button class="btn btn-ghost btn-sm"
+                            onclick="toast('We\'ll notify you when this is ready.')">Notify me</button>
                     </div>
                 </div>
             </div>
@@ -387,275 +1350,383 @@
         </section>
     </main>
 
-    <div id="toast-container"></div>
+    <div id="toast-root" aria-live="polite"></div>
 
     <script>
-        // Session / Auth Guard
-        const userId = localStorage.getItem('fixr_userId');
+        /* ══ DEMO DATA (replace with real API calls) ══ */
+        const DEMO_JOBS = [
+            { id: 'job-001', title: 'Bathroom faucet replacement', client: 'Sarah Mitchell', stage: 'New', value: 320, due_date: null },
+            { id: 'job-002', title: 'Kitchen drain unclog', client: 'Tom Weston', stage: 'New', value: 150, due_date: null },
+            { id: 'job-003', title: 'Water heater install', client: 'Carol Jennings', stage: 'Scheduled', value: 850, due_date: 'May 5' },
+            { id: 'job-004', title: 'Outdoor spigot repair', client: 'Dave Huang', stage: 'In Progress', value: 200, due_date: null },
+            { id: 'job-005', title: 'Main line inspection', client: 'Priya Patel', stage: 'Completed', value: 475, due_date: null },
+            { id: 'job-006', title: 'Toilet tank rebuild', client: 'James Ford', stage: 'Invoiced', value: 180, due_date: null },
+        ];
+
+        const DEMO_CLIENTS = [
+            { name: 'Sarah Mitchell', phone: '(864) 555-0182', email: 'sarah.m@email.com', address: '114 Elm St, Spartanburg', jobs: 3, ltv: '$945', status: 'Active' },
+            { name: 'Tom Weston', phone: '(864) 555-0247', email: 'tom.w@email.com', address: '22 Peach Dr, Spartanburg', jobs: 1, ltv: '$150', status: 'Active' },
+            { name: 'Carol Jennings', phone: '(864) 555-0391', email: 'carol.j@email.com', address: '88 Oak Lane, Spartanburg', jobs: 2, ltv: '$1,325', status: 'Active' },
+            { name: 'Dave Huang', phone: '(864) 555-0104', email: 'd.huang@email.com', address: '5 Magnolia Ave, Inman', jobs: 1, ltv: '$200', status: 'New' },
+            { name: 'Priya Patel', phone: '(864) 555-0466', email: 'p.patel@email.com', address: '301 River Rd, Spartanburg', jobs: 4, ltv: '$1,875', status: 'Active' },
+        ];
+
+        const DEMO_LEADS = [
+            { id: 'lead-001', service: 'Plumbing', title: 'Kitchen rough-in for island sink', zip: '29301', urgency: 'Within 2 weeks', budget: '$400–$700', desc: 'Adding a kitchen island and need plumbing rough-in for new sink and dishwasher. House is 2007 build, slab foundation.' },
+            { id: 'lead-002', service: 'General', title: 'Ceiling drywall patch after leak', zip: '29302', urgency: 'Flexible', budget: '$150–$300', desc: 'Roof leak repaired. Left a ~2ft water-damaged patch in the dining room ceiling. Need it patched and painted to match.' },
+            { id: 'lead-003', service: 'Plumbing', title: 'Whole-house water pressure issue', zip: '29307', urgency: 'ASAP', budget: 'TBD', desc: 'Pressure dropped significantly over the past week. All fixtures affected. Not sure if PRV or main line issue.' },
+        ];
+
+        /* ══ AUTH ══ */
+        const userId = (() => { try { return localStorage.getItem('fixr_userId'); } catch { return null; } })();
         const role = localStorage.getItem('fixr_role');
-        const name = localStorage.getItem('fixr_name') || 'Contractor';
-        const plan = localStorage.getItem('fixr_plan') || 'Starter';
-        
+        const token = localStorage.getItem('fixr_token');
+        const name = (() => { try { return localStorage.getItem('fixr_name') || 'Mike Reynolds'; } catch { return 'Mike Reynolds'; } })();
+        const plan = (() => { try { return localStorage.getItem('fixr_plan') || 'Starter'; } catch { return 'Starter'; } })();
+
         if (!userId || role !== 'contractor') {
             window.location.href = 'login.html';
-        } else {
-            // Set User Info
-            document.getElementById('userName').textContent = name;
-            document.getElementById('userInitials').textContent = name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
-            document.getElementById('userPlan').textContent = plan + ' Plan';
-            
-            // Load live data
-            loadJobs();
-            loadClients();
-            loadContractorLeads();
         }
-        
-        // Navigation Logic
-        const titles = {
-            'pipeline': 'Pipeline',
-            'clients': 'Clients',
-            'analytics': 'Earnings & Analytics',
-            'quotes': 'Quotes & Invoices',
-            'leads': 'Homeowner Leads'
-        };
-
-        function switchView(viewId) {
-            // Update nav items
-            document.querySelectorAll('.nav-item').forEach(el => {
-                el.classList.remove('active');
-                if (el.dataset.view === viewId) {
-                    el.classList.add('active');
-                }
-            });
-            
-            // Update panels
-            document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
-            document.getElementById('view-' + viewId).classList.add('active');
-            
-            // Update title
-            document.getElementById('pageTitle').textContent = titles[viewId];
-
-            // Render charts if analytics view
-            if (viewId === 'analytics' && !window.chartsRendered) {
-                renderCharts();
-                window.chartsRendered = true;
-            }
-        }
+        // Demo mode: populate with stored/default values
+        document.getElementById('userName').textContent = name;
+        document.getElementById('userInitials').textContent = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        document.getElementById('userPlan').textContent = plan + ' Plan';
 
         function logout() {
-            localStorage.clear();
+            localStorage.removeItem('fixr_userId');
+            localStorage.removeItem('fixr_role');
+            localStorage.removeItem('fixr_name');
+            localStorage.removeItem('fixr_plan');
+            localStorage.removeItem('fixr_token');
             window.location.href = 'index.html';
         }
 
-        function showToast(msg) {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.textContent = msg;
-            container.appendChild(toast);
-            
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
+        /* ══ NAVIGATION ══ */
+        const PAGE_TITLES = {
+            overview: 'Overview',
+            pipeline: 'Current Work',
+            leads: 'New Leads',
+            clients: 'Clients',
+            quotes: 'Quote Builder',
+            analytics: 'Earnings & Analytics',
+            schedule: 'Schedule',
+            reviews: 'Reviews',
+        };
+
+        let chartsRendered = false;
+
+        function switchView(viewId) {
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.view === viewId);
+                el.setAttribute('aria-current', el.dataset.view === viewId ? 'page' : 'false');
+            });
+            document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
+            const panel = document.getElementById('view-' + viewId);
+            if (panel) panel.classList.add('active');
+            document.getElementById('pageTitle').textContent = PAGE_TITLES[viewId] || viewId;
+
+            if (viewId === 'analytics' && !chartsRendered) {
+                // Destroy any orphaned Chart instances before rendering
+                ['revenueChart', 'serviceChart'].forEach(id => {
+                    const existing = Chart.getChart(id);
+                    if (existing) existing.destroy();
+                });
+                renderCharts();
+                chartsRendered = true;
+            }
         }
 
-        // ── Kanban Drag & Drop ──
-        let draggedJobId = null;
+        /* ══ TOAST ══ */
+        function toast(msg, type = '') {
+            const root = document.getElementById('toast-root');
+            const el = document.createElement('div');
+            el.className = 'toast' + (type ? ' ' + type : '');
+            el.textContent = msg;
+            root.appendChild(el);
+            requestAnimationFrame(() => { requestAnimationFrame(() => el.classList.add('show')); });
+            setTimeout(() => {
+                el.classList.remove('show');
+                setTimeout(() => el.remove(), 250);
+            }, 3200);
+        }
+
+        /* ══ KANBAN ══ */
+        let dragSrcId = null;
 
         function drag(ev) {
-            draggedJobId = ev.target.id;
-            ev.dataTransfer.setData("text", ev.target.id);
-            ev.target.style.opacity = '0.5';
+            dragSrcId = ev.currentTarget.id;
+            ev.dataTransfer.effectAllowed = 'move';
+            ev.dataTransfer.setData('text/plain', ev.currentTarget.id);
+            setTimeout(() => ev.currentTarget.classList.add('dragging'), 0);
         }
 
-        function allowDrop(ev) {
-            ev.preventDefault();
+        function allowDrop(ev) { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; }
+
+        function dragEnter(ev) {
+            const col = ev.currentTarget.querySelector('.column-body');
+            if (col) col.classList.add('drag-over');
+        }
+        function dragLeave(ev) {
+            if (!ev.currentTarget.contains(ev.relatedTarget)) {
+                const col = ev.currentTarget.querySelector('.column-body');
+                if (col) col.classList.remove('drag-over');
+            }
         }
 
         function drop(ev, stageName) {
             ev.preventDefault();
-            const data = ev.dataTransfer.getData("text");
-            const draggedElement = document.getElementById(data);
-            draggedElement.style.opacity = '1';
-            
-            // Find the column body to append to
-            let targetCol = ev.target;
-            while (!targetCol.classList.contains('kanban-column')) {
-                targetCol = targetCol.parentElement;
-                if (!targetCol) return;
-            }
-            
-            const colBody = targetCol.querySelector('.column-body');
-            colBody.appendChild(draggedElement);
-            
-            // Update counts
-            updateCounts();
-            
-            // Update in backend
-            fetch(`/api/jobs/${data}/stage`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ stage: stageName, position: Array.from(colBody.children).indexOf(draggedElement) })
-            }).catch(console.error);
+            const id = ev.dataTransfer.getData('text/plain');
+            const card = document.getElementById(id);
+            if (!card) return;
+            card.classList.remove('dragging');
 
-            showToast(`Moved to ${stageName}`);
+            // Find the kanban-column ancestor of the drop target
+            let colEl = ev.target;
+            while (colEl && !colEl.classList.contains('kanban-column')) colEl = colEl.parentElement;
+            if (!colEl) return;
+
+            const body = colEl.querySelector('.column-body');
+            body.classList.remove('drag-over');
+            body.appendChild(card);
+            updateCounts();
+            toast(`Moved to ${stageName}`);
+
+            // Persist to backend (no-op in demo)
+            fetch(`/api/jobs/${id}/stage`, {
+                method: 'PATCH',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ stage: stageName, position: Array.from(body.children).indexOf(card) })
+            }).catch(() => { }); // silently ignore in demo / offline
         }
-        
-        // Reset opacity on drag end even if not dropped in valid zone
-        document.addEventListener('dragend', (e) => {
-            if (e.target.classList.contains('job-card')) {
-                e.target.style.opacity = '1';
+
+        // Restore opacity if card dragged outside any valid zone
+        document.addEventListener('dragend', ev => {
+            if (ev.target.classList.contains('job-card')) {
+                ev.target.classList.remove('dragging');
+                // Re-scan all column-bodies to remove drag-over
+                document.querySelectorAll('.column-body').forEach(b => b.classList.remove('drag-over'));
             }
         });
 
-        // ── Data Fetching ──
+        function updateCounts() {
+            const map = { 'new': 'new', 'scheduled': 'scheduled', 'progress': 'progress', 'completed': 'completed', 'invoiced': 'invoiced' };
+            Object.keys(map).forEach(key => {
+                const body = document.getElementById('col-' + key);
+                const cnt = document.getElementById('cnt-' + key);
+                if (body && cnt) cnt.textContent = body.querySelectorAll('.job-card').length;
+            });
+        }
+
+        function buildJobCard(job) {
+            const el = document.createElement('div');
+            el.className = 'job-card';
+            el.draggable = true;
+            // Sanitise ID: use data-job-id for non-alphanumeric safe IDs
+            const safeId = 'jcard-' + job.id.replace(/[^a-zA-Z0-9-_]/g, '_');
+            el.id = safeId;
+            el.dataset.jobId = job.id;
+            el.addEventListener('dragstart', drag);
+
+            let badgeHtml = '';
+            if (job.stage === 'New') badgeHtml = '<span class="badge badge-neutral">New</span>';
+            if (job.stage === 'Scheduled') badgeHtml = job.due_date ? `<span class="badge badge-blue">📅 ${job.due_date}</span>` : '<span class="badge badge-blue">Scheduled</span>';
+            if (job.stage === 'In Progress') badgeHtml = '<span class="badge badge-orange">On Site</span>';
+            if (job.stage === 'Completed') badgeHtml = '<span class="badge badge-amber">Needs Invoice</span>';
+            if (job.stage === 'Invoiced') badgeHtml = '<span class="badge badge-green">Sent</span>';
+
+            const valueHtml = job.value ? `<span class="job-value">$${job.value.toLocaleString()}</span>` : '';
+            const clientHtml = job.client ? `<div class="job-card-client">${escHtml(job.client)}</div>` : '';
+
+            el.innerHTML = `
+      <div class="job-card-title">${escHtml(job.title)}</div>
+      ${clientHtml}
+      <div class="job-card-footer">${badgeHtml}${valueHtml}</div>
+    `;
+            return el;
+        }
+
+        /* ══ DATA LOADING ══ */
         async function loadJobs() {
             try {
-                const res = await fetch(`/api/jobs?contractor_id=${userId}`);
-                const jobs = await res.json();
-                
+                let jobs;
+                if (userId) {
+                    const res = await fetch(`/api/jobs?contractor_id=${encodeURIComponent(userId)}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) throw new Error('API error');
+                    jobs = await res.json();
+                } else {
+                    jobs = DEMO_JOBS; // Demo fallback
+                }
+
                 // Clear columns
-                document.querySelectorAll('.column-body').forEach(el => el.innerHTML = '');
-                
+                ['new', 'scheduled', 'progress', 'completed', 'invoiced'].forEach(k => {
+                    const el = document.getElementById('col-' + k);
+                    if (el) el.innerHTML = '';
+                });
+
+                const colMap = {
+                    'New': 'col-new', 'Scheduled': 'col-scheduled',
+                    'In Progress': 'col-progress', 'Completed': 'col-completed', 'Invoiced': 'col-invoiced'
+                };
+
                 jobs.forEach(job => {
-                    const colMap = {
-                        'New': 'col-new',
-                        'Scheduled': 'col-scheduled',
-                        'In Progress': 'col-progress',
-                        'Completed': 'col-completed',
-                        'Invoiced': 'col-invoiced'
-                    };
                     const colId = colMap[job.stage] || 'col-new';
                     const col = document.getElementById(colId);
-                    if (!col) return;
-                    
-                    const el = document.createElement('div');
-                    el.className = 'job-card';
-                    el.draggable = true;
-                    el.id = job.id;
-                    el.ondragstart = drag;
-                    
-                    let badge = '';
-                    if (job.stage === 'New') badge = '<span class="badge badge-gray">New Request</span>';
-                    if (job.stage === 'Scheduled' && job.due_date) badge = `<span style="font-size:0.75rem; color:var(--muted)">📅 ${job.due_date}</span>`;
-                    if (job.stage === 'In Progress') badge = '<span class="badge badge-blue">On Site</span>';
-                    if (job.stage === 'Completed') badge = '<span class="badge badge-yellow">Needs Invoice</span>';
-                    if (job.stage === 'Invoiced') badge = '<span class="badge badge-green">Sent</span>';
-                    
-                    let valueStr = job.value ? `<span class="job-value">$${job.value}</span>` : '';
-                    
-                    el.innerHTML = `
-                        <div class="job-card-title">${job.title}</div>
-                        ${job.client_id ? `<div class="job-card-client">👤 Client</div>` : ''}
-                        <div class="job-card-footer">
-                            ${badge}
-                            ${valueStr}
-                        </div>
-                    `;
-                    col.appendChild(el);
+                    if (col) col.appendChild(buildJobCard(job));
                 });
-                
+
+                document.getElementById('ov-jobs').textContent = jobs.length;
                 updateCounts();
-            } catch (e) {
-                console.error("Failed to load jobs", e);
+            } catch {
+                // Demo mode fallback already handled above; swallow silently
             }
         }
 
         async function loadClients() {
             try {
-                const res = await fetch(`/api/clients?contractor_id=${userId}`);
-                const clients = await res.json();
-                
-                const tbody = document.getElementById('clients-tbody');
-                tbody.innerHTML = '';
-                
-                clients.forEach(c => {
-                    const statusBadge = c.status === 'Active' ? 'badge-green' : 'badge-gray';
-                    
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><div class="client-name">${c.name}</div></td>
-                        <td><span class="client-contact">${c.phone || '-'}<br>${c.email || ''}</span></td>
-                        <td><span class="client-contact">${c.address || '-'}</span></td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td><span class="badge ${statusBadge}">${c.status}</span></td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            } catch (e) {
-                console.error("Failed to load clients", e);
-            }
-        }
+                let clients;
+                if (userId) {
+                    const res = await fetch(`/api/clients?contractor_id=${encodeURIComponent(userId)}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) throw new Error('API error');
+                    clients = await res.json();
+                } else {
+                    clients = DEMO_CLIENTS;
+                }
 
-        async function loadContractorLeads() {
-            try {
-                const res = await fetch(`/api/leads`);
-                const leads = await res.json();
-                
-                const container = document.getElementById('contractor-leads-container');
-                container.innerHTML = '';
-                
-                if (leads.length === 0) {
-                    container.innerHTML = '<div style="text-align:center; padding: 60px; color: var(--muted);">No new leads available in your area.</div>';
+                const tbody = document.getElementById('clients-tbody');
+                if (!tbody) return;
+
+                if (clients.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6"><div class="placeholder"><div class="placeholder-title">No clients yet</div><div class="placeholder-sub">Completed jobs will appear here automatically.</div></div></td></tr>`;
                     return;
                 }
-                
-                leads.forEach(lead => {
-                    const div = document.createElement('div');
-                    div.style.cssText = 'border: 1px solid var(--border); padding: 20px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start;';
-                    div.innerHTML = `
-                        <div>
-                            <div style="color: var(--orange); font-weight: bold; font-size: 0.8rem; text-transform: uppercase;">${lead.service}</div>
-                            <h3 style="font-family: var(--font-heading); margin-bottom: 8px;">${lead.job_title || lead.service}</h3>
-                            <div style="font-size: 0.9rem; color: var(--muted); margin-bottom: 12px;">📍 ${lead.zip_code || 'Unknown ZIP'} · ⏱ ${lead.urgency || 'Flexible'} · 💰 ${lead.budget_range || 'TBD'}</div>
-                            <p style="font-size: 0.95rem;">${lead.description || 'No description provided.'}</p>
-                        </div>
-                        <button class="btn btn-primary" onclick="acceptLead('${lead.id}')">Accept Lead</button>
-                    `;
-                    container.appendChild(div);
+
+                tbody.innerHTML = '';
+                clients.forEach(c => {
+                    const statusClass = c.status === 'Active' ? 'badge-green' : 'badge-neutral';
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+          <td><span class="td-name">${escHtml(c.name)}</span></td>
+          <td><span>${escHtml(c.phone || '—')}</span><span class="td-sub">${escHtml(c.email || '')}</span></td>
+          <td><span>${escHtml(c.address || '—')}</span></td>
+          <td class="td-bold">${c.jobs ?? '—'}</td>
+          <td class="td-bold">${escHtml(c.ltv || '—')}</td>
+          <td><span class="badge ${statusClass}">${escHtml(c.status)}</span></td>
+        `;
+                    tbody.appendChild(tr);
                 });
-            } catch (e) {
-                console.error("Failed to load leads", e);
+            } catch {
+                // Silently fall back
             }
         }
 
-        async function acceptLead(leadId) {
+        async function loadLeads() {
+            const container = document.getElementById('leads-list-container');
             try {
-                const res = await fetch(`/api/leads/${leadId}/accept`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contractor_user_id: userId })
-                });
-                
-                if (res.ok) {
-                    showToast('Lead accepted! Added to Pipeline and Clients.');
-                    loadContractorLeads(); // Refresh leads list
-                    loadJobs(); // Refresh pipeline
-                    loadClients(); // Refresh clients CRM
+                let leads;
+                if (userId) {
+                    const res = await fetch('/api/leads', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) throw new Error('API error');
+                    leads = await res.json();
                 } else {
-                    const data = await res.json();
-                    showToast(data.error || 'Failed to accept lead.');
+                    leads = DEMO_LEADS;
                 }
-            } catch (e) {
-                showToast('Server error while accepting lead.');
+
+                // Update badge
+                const badge = document.getElementById('leads-nav-badge');
+                if (leads.length > 0) {
+                    badge.textContent = leads.length;
+                    badge.style.display = '';
+                } else {
+                    badge.style.display = 'none';
+                }
+                document.getElementById('ov-leads').textContent = leads.length;
+
+                if (leads.length === 0) {
+                    container.innerHTML = `<div class="card"><div class="placeholder">
+          <div class="placeholder-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></div>
+          <div class="placeholder-title">No new leads</div>
+          <div class="placeholder-sub">You're all caught up. New leads in your area will appear here automatically.</div>
+        </div></div>`;
+                    return;
+                }
+
+                container.innerHTML = '';
+                leads.forEach(lead => {
+                    const card = document.createElement('div');
+                    card.className = 'lead-card';
+                    card.innerHTML = `
+          <div class="lead-body">
+            <div class="lead-service">${escHtml(lead.service)}</div>
+            <div class="lead-title">${escHtml(lead.title || lead.service)}</div>
+            <div class="lead-meta">
+              <span>📍 ${escHtml(lead.zip || 'Unknown ZIP')}</span>
+              <span>⏱ ${escHtml(lead.urgency || 'Flexible')}</span>
+              <span>💰 ${escHtml(lead.budget || 'TBD')}</span>
+            </div>
+            <div class="lead-desc">${escHtml(lead.desc || 'No description provided.')}</div>
+          </div>
+          <div class="lead-action">
+            <button class="btn btn-primary btn-sm" data-lead-id="${escHtml(lead.id)}">Accept Lead</button>
+          </div>
+        `;
+                    card.querySelector('[data-lead-id]').addEventListener('click', () => acceptLead(lead.id, card));
+                    container.appendChild(card);
+                });
+            } catch {
+                container.innerHTML = `<div class="card"><div class="placeholder"><div class="placeholder-title">Could not load leads</div><div class="placeholder-sub">Check your connection and try again.</div></div></div>`;
             }
         }
 
-        function updateCounts() {
-            document.querySelectorAll('.kanban-column').forEach(col => {
-                const count = col.querySelectorAll('.job-card').length;
-                col.querySelector('.column-count').textContent = count;
-            });
+        async function acceptLead(leadId, cardEl) {
+            const btn = cardEl.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = 'Accepting…';
+            try {
+                if (userId) {
+                    const res = await fetch(`/api/leads/${encodeURIComponent(leadId)}/accept`, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ contractor_user_id: userId })
+                    });
+                    if (!res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        toast(data.error || 'Failed to accept lead.', 'error');
+                        btn.disabled = false; btn.textContent = 'Accept Lead';
+                        return;
+                    }
+                }
+                // Animate card out
+                cardEl.style.transition = 'opacity 0.2s, transform 0.2s';
+                cardEl.style.opacity = '0'; cardEl.style.transform = 'translateX(12px)';
+                setTimeout(() => cardEl.remove(), 200);
+                toast('Lead accepted! Added to your pipeline.', 'success');
+                loadJobs();
+                loadClients();
+            } catch {
+                toast('Server error — please try again.', 'error');
+                btn.disabled = false; btn.textContent = 'Accept Lead';
+            }
         }
 
-        // ── Charts ──
+        /* ══ CHARTS ══ */
         function renderCharts() {
-            // Revenue Chart
-            const ctxRev = document.getElementById('revenueChart').getContext('2d');
-            new Chart(ctxRev, {
+            const revCtx = document.getElementById('revenueChart');
+            const svcCtx = document.getElementById('serviceChart');
+            if (!revCtx || !svcCtx) return;
+
+            new Chart(revCtx, {
                 type: 'bar',
                 data: {
                     labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
@@ -663,35 +1734,52 @@
                         label: 'Revenue ($)',
                         data: [1200, 1900, 1500, 2750],
                         backgroundColor: '#C85A2A',
-                        borderRadius: 4
+                        borderRadius: 5,
+                        borderSkipped: false,
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true } },
-                    plugins: { legend: { display: false } }
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#F0EDE8' }, ticks: { callback: v => '$' + v.toLocaleString(), font: { size: 11 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+                    },
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' $' + ctx.raw.toLocaleString() } } }
                 }
             });
 
-            // Service Chart
-            const ctxSvc = document.getElementById('serviceChart').getContext('2d');
-            new Chart(ctxSvc, {
+            new Chart(svcCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Plumbing', 'HVAC', 'General'],
+                    labels: ['Plumbing', 'HVAC', 'General', 'Electrical'],
                     datasets: [{
-                        data: [15, 5, 2],
-                        backgroundColor: ['#C85A2A', '#141210', '#E0D9CE']
+                        data: [15, 5, 4, 2],
+                        backgroundColor: ['#C85A2A', '#141210', '#A34821', '#E0D9CE'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } }
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } } },
+                    cutout: '62%'
                 }
             });
         }
+
+        /* ══ UTILS ══ */
+        function escHtml(str) {
+            if (str == null) return '';
+            return String(str)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        /* ══ INIT ══ */
+        loadJobs();
+        loadClients();
+        loadLeads();
     </script>
 </body>
+
 </html>

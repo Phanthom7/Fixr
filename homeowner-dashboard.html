@@ -176,8 +176,8 @@
     </div>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('requests')">📋 My Requests</button>
-        <button class="tab-btn" onclick="switchTab('messages')">💬 Messages</button>
+        <button class="tab-btn active" data-tab="requests" onclick="switchTab('requests')">📋 My Requests</button>
+        <button class="tab-btn" data-tab="messages" onclick="switchTab('messages')">💬 Messages</button>
     </div>
 
     <!-- ── REQUESTS TAB ── -->
@@ -205,6 +205,25 @@
     const userId = localStorage.getItem('fixr_userId');
     const role   = localStorage.getItem('fixr_role');
     const name   = localStorage.getItem('fixr_name') || 'You';
+    const token  = localStorage.getItem('fixr_token');
+
+    // Utility to prevent XSS
+    function escHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+    
+    // Parse Firestore timestamp or Date string
+    function parseDate(ts) {
+        if (!ts) return new Date();
+        if (ts._seconds) return new Date(ts._seconds * 1000);
+        return new Date(ts);
+    }
 
     // Auth guard
     if (!userId || role !== 'homeowner') {
@@ -222,8 +241,8 @@
 
     // ── Tabs ─────────────────────────────────────────────────────────────────
     function switchTab(tab) {
-        document.querySelectorAll('.tab-btn').forEach((b, i) => {
-            b.classList.toggle('active', ['requests','messages'][i] === tab);
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.toggle('active', b.getAttribute('data-tab') === tab);
         });
         document.getElementById('tab-requests').classList.toggle('active', tab === 'requests');
         document.getElementById('tab-messages').classList.toggle('active', tab === 'messages');
@@ -245,7 +264,9 @@
     // ── Load leads ────────────────────────────────────────────────────────────
     async function loadLeads() {
         try {
-            const res  = await fetch(`/api/homeowner/leads/${userId}`);
+            const res  = await fetch(`/api/homeowner/leads/${userId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             userLeads  = await res.json();
             renderLeads();
         } catch (e) {
@@ -267,22 +288,22 @@
             return;
         }
         wrap.innerHTML = userLeads.map(l => `
-            <div class="lead-card" onclick="openMessages(${l.id}, '${(l.job_title||l.service).replace(/'/g,"\\'")}')">
+            <div class="lead-card" onclick="openMessages('${l.id}', '${escHtml(l.job_title||l.service)}')">
                 <div class="lead-card-header">
                     <div>
-                        <div class="lead-service">${l.service}</div>
-                        <div class="lead-title">${l.job_title || l.service}</div>
+                        <div class="lead-service">${escHtml(l.service)}</div>
+                        <div class="lead-title">${escHtml(l.job_title || l.service)}</div>
                     </div>
                     ${statusBadge(l.status)}
                 </div>
                 <div class="lead-meta">
-                    <span>📍 ${l.zip_code || '—'}</span>
-                    ${l.urgency   ? `<span>⏱ ${l.urgency}</span>` : ''}
-                    ${l.budget_range ? `<span>💰 ${l.budget_range}</span>` : ''}
-                    ${l.contractor_name ? `<span>👷 ${l.contractor_name}</span>` : ''}
-                    <span>🗓 ${new Date(l.created_at).toLocaleDateString()}</span>
+                    <span>📍 ${escHtml(l.zip_code) || '—'}</span>
+                    ${l.urgency   ? `<span>⏱ ${escHtml(l.urgency)}</span>` : ''}
+                    ${l.budget_range ? `<span>💰 ${escHtml(l.budget_range)}</span>` : ''}
+                    ${l.contractor_name ? `<span>👷 ${escHtml(l.contractor_name)}</span>` : ''}
+                    <span>🗓 ${parseDate(l.createdAt || l.created_at).toLocaleDateString()}</span>
                 </div>
-                ${l.description ? `<div class="lead-desc">${l.description.slice(0,160)}${l.description.length>160?'…':''}</div>` : ''}
+                ${l.description ? `<div class="lead-desc">${escHtml(l.description).slice(0,160)}${l.description.length>160?'…':''}</div>` : ''}
             </div>`).join('');
     }
 
@@ -291,8 +312,8 @@
         const wrap = document.getElementById('lead-selector-wrap');
         if (!userLeads.length) { wrap.innerHTML = ''; return; }
         wrap.innerHTML = userLeads.map(l =>
-            `<button class="lead-sel-btn ${activeLeadId===l.id?'active':''}" onclick="openMessages(${l.id},'${(l.job_title||l.service).replace(/'/g,"\\'")}')">
-                📋 ${l.job_title || l.service} <span style="float:right;font-size:0.72rem;color:var(--muted);">${l.status}</span>
+            `<button class="lead-sel-btn ${activeLeadId===l.id?'active':''}" onclick="openMessages('${l.id}','${escHtml(l.job_title||l.service)}')">
+                📋 ${escHtml(l.job_title || l.service)} <span style="float:right;font-size:0.72rem;color:var(--muted);">${escHtml(l.status)}</span>
             </button>`
         ).join('');
     }
@@ -308,7 +329,9 @@
         const wrap = document.getElementById('msg-panel-wrap');
         wrap.innerHTML = `<div class="msg-select-hint">Loading messages…</div>`;
         try {
-            const res  = await fetch(`/api/messages/${leadId}`);
+            const res  = await fetch(`/api/messages/${leadId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const msgs = await res.json();
             renderMessages(msgs, leadId, title);
         } catch(e) {
@@ -323,23 +346,23 @@
 
         const bubbles = msgs.length ? msgs.map(m => {
             const sent = String(m.sender_id) === String(userId);
-            const time = new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+            const time = parseDate(m.createdAt || m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
             return `<div class="msg-bubble ${sent?'sent':'recv'}">
-                <div class="msg-text">${m.body}</div>
-                <div class="msg-meta">${sent ? 'You' : m.sender_name} · ${time}</div>
+                <div class="msg-text">${escHtml(m.body)}</div>
+                <div class="msg-meta">${sent ? 'You' : escHtml(m.sender_name || 'Contractor')} · ${time}</div>
             </div>`;
         }).join('') : `<div style="text-align:center;color:var(--muted);font-size:0.85rem;margin:auto;">No messages yet. Say hello to your contractor!</div>`;
 
         wrap.innerHTML = `
             <div class="msg-panel">
                 <div class="msg-panel-header">
-                    <h3>${title}</h3>
-                    <p>${lead?.contractor_name ? `Connected with ${contractorName}` : 'Awaiting contractor assignment'}</p>
+                    <h3>${escHtml(title)}</h3>
+                    <p>${lead?.contractor_name ? `Connected with ${escHtml(contractorName)}` : 'Awaiting contractor assignment'}</p>
                 </div>
                 <div class="msg-list" id="msg-list-${leadId}">${bubbles}</div>
                 <div class="msg-compose">
-                    <input type="text" id="msg-input" placeholder="Type a message…" onkeydown="if(event.key==='Enter') sendMessage(${leadId})">
-                    <button class="btn-send" onclick="sendMessage(${leadId})">Send</button>
+                    <input type="text" id="msg-input" placeholder="Type a message…" onkeydown="if(event.key==='Enter') sendMessage('${leadId}')">
+                    <button class="btn-send" onclick="sendMessage('${leadId}')">Send</button>
                 </div>
             </div>`;
         // scroll to bottom
@@ -362,7 +385,10 @@
         try {
             const res = await fetch('/api/messages', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({ lead_id: leadId, sender_id: userId, receiver_id: receiverId, body })
             });
             if (res.ok) {
@@ -380,6 +406,7 @@
         localStorage.removeItem('fixr_userId');
         localStorage.removeItem('fixr_role');
         localStorage.removeItem('fixr_name');
+        localStorage.removeItem('fixr_token');
         window.location.href = 'index.html';
     }
 

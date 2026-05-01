@@ -426,13 +426,13 @@
             </div>
             <div class="field-grid-2">
                 <div class="field">
-                    <label>Password <span class="req">*</span></label>
-                    <input type="password" id="password" placeholder="Min. 6 characters">
-                </div>
-                <div class="field">
-                    <label>Confirm password <span class="req">*</span></label>
-                    <input type="password" id="confirm_password" placeholder="Re-enter password">
-                </div>
+                            <label>Password</label>
+                            <input type="password" id="password" required placeholder="Min. 6 characters" minlength="6">
+                        </div>
+                        <div class="input-group half">
+                            <label>Confirm Password</label>
+                            <input type="password" id="confirm_password" required placeholder="Re-enter password" minlength="6">
+                        </div>
             </div>
         </div>
 
@@ -503,7 +503,7 @@
             if (!job_title) return showToast('Please add a brief job title.');
             if (!description || description.length < 20)
                 return showToast('Please describe your project in more detail (at least 20 characters).');
-            if (!zip_code) return showToast('Please enter your ZIP code.');
+            if (!zip_code || !/^\d{5}$/.test(zip_code)) return showToast('Please enter a valid 5-digit ZIP code.');
             if (!password || password.length < 6)
                 return showToast('Password must be at least 6 characters.');
             if (password !== confirm)
@@ -524,17 +524,19 @@
                         budget_range, zip_code
                     })
                 });
-                const data = await res.json();
+                const result = await res.json();
 
                 if (res.ok) {
                     // Store session info
-                    localStorage.setItem('fixr_userId', data.userId);
-                    localStorage.setItem('fixr_role',   data.role);
-                    localStorage.setItem('fixr_name',   data.name);
-                    showToast('Account created! Taking you to your dashboard…', 'success');
-                    setTimeout(() => window.location.href = 'homeowner-dashboard.html', 1400);
+                    localStorage.setItem('fixr_userId', result.userId);
+                    localStorage.setItem('fixr_role', result.role);
+                    localStorage.setItem('fixr_name', result.name);
+                    if (result.token) localStorage.setItem('fixr_token', result.token);
+
+                    showToast('Quote requested! Redirecting to your dashboard...', 'success');
+                    setTimeout(() => window.location.href = 'homeowner-dashboard.html', 1500);
                 } else {
-                    showToast(data.error || 'Something went wrong.');
+                    showToast(result.error || 'Something went wrong.');
                     btn.disabled = false;
                     btn.innerHTML = '<span>Get My Free Quotes</span><span>→</span>';
                 }

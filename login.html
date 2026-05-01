@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fixr - Contractor Login</title>
+    <title>Fixr - Login</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -186,7 +186,7 @@
     <div class="login-wrapper">
         <div class="login-card">
             <a href="index.html" class="logo">Fix<span class="accent">r</span></a>
-            <p class="subtitle">Welcome back, Pro.</p>
+            <p class="subtitle">Welcome back.</p>
 
             <div class="input-group">
                 <label>Email Address</label>
@@ -200,7 +200,7 @@
 
             <a href="#" class="forgot-link">Forgot password?</a>
 
-            <button class="btn" onclick="handleLogin()">Sign In</button>
+            <button class="btn" id="login-btn" onclick="handleLogin()">Sign In</button>
             
             <a href="index.html" class="back-link">&larr; Back to Fixr Home</a>
         </div>
@@ -209,10 +209,10 @@
     <div id="toast-container"></div>
 
     <script>
-        // Show success toast if arriving from contractor application
-        if (localStorage.getItem('fixr_apply_success')) {
-            localStorage.removeItem('fixr_apply_success');
-            setTimeout(() => showToast('Application received! Sign in once approved.'), 300);
+        // Show success toast if arriving from signup
+        if (localStorage.getItem('fixr_signup_success')) {
+            localStorage.removeItem('fixr_signup_success');
+            setTimeout(() => showToast('Account created! Please sign in.', 'success'), 300);
         }
 
         function showToast(message, type = 'error') {
@@ -237,6 +237,10 @@
                 return;
             }
 
+            const btn = document.getElementById('login-btn');
+            btn.disabled = true;
+            btn.textContent = 'Signing in...';
+
             try {
                 const res  = await fetch('/api/auth/login', {
                     method:  'POST',
@@ -249,6 +253,7 @@
                     localStorage.setItem('fixr_userId', data.userId);
                     localStorage.setItem('fixr_role',   data.role);
                     localStorage.setItem('fixr_name',   data.name);
+                    if (data.token) localStorage.setItem('fixr_token', data.token);
                     
                     if (data.subscription && data.subscription.plan) {
                         localStorage.setItem('fixr_plan', data.subscription.plan);
@@ -267,6 +272,9 @@
             } catch (err) {
                 console.error(err);
                 showToast('Could not connect to the server. Is it running?');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Sign In';
             }
         }
     </script>

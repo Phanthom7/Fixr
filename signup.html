@@ -270,7 +270,7 @@
             <h1 class="title">Start your 14-day free trial</h1>
             <p class="subtitle">No credit card required. Upgrade or cancel anytime.</p>
 
-            <form id="signupForm" onsubmit="handleSignup(event)">
+            <form id="signupForm" onsubmit="event.preventDefault(); handleSignup(event);">
                 <!-- Plan Selection -->
                 <div class="plan-selector">
                     <div class="plan-card" onclick="selectPlan('Starter')" id="plan-Starter">
@@ -360,7 +360,8 @@
         // Pre-select plan from URL if present
         const params = new URLSearchParams(window.location.search);
         if (params.get('plan')) {
-            const p = params.get('plan');
+            let p = params.get('plan');
+            if (p === 'Business') p = 'Elite';
             if (['Starter', 'Pro', 'Elite'].includes(p)) {
                 selectPlan(p);
             }
@@ -389,8 +390,8 @@
             const password = document.getElementById('password').value;
             const confirm  = document.getElementById('confirm_password').value;
             const plan     = document.getElementById('selectedPlan').value;
-            const experience_years = document.getElementById('experience').value 
-                ? parseInt(document.getElementById('experience').value) : null;
+            const expVal   = document.getElementById('experience').value.trim();
+            const experience_years = expVal ? parseInt(expVal, 10) : null;
 
             if (password.length < 6) {
                 return showToast('Password must be at least 6 characters.');
@@ -418,9 +419,10 @@
                     localStorage.setItem('fixr_role', result.role);
                     localStorage.setItem('fixr_name', result.name);
                     localStorage.setItem('fixr_plan', result.plan);
+                    if (result.token) localStorage.setItem('fixr_token', result.token);
                     
-                    showToast('Account created! Redirecting to dashboard...', 'success');
-                    setTimeout(() => window.location.href = 'contractor-dashboard.html', 1500);
+                    localStorage.setItem('fixr_signup_success', 'true');
+                    window.location.href = 'login.html';
                 } else {
                     showToast(result.error || 'Something went wrong.');
                     btn.disabled = false;
