@@ -1126,67 +1126,51 @@
                 </div>
             </div>
 
+
+
             <!-- ══ PIPELINE ══ -->
             <div id="view-pipeline" class="view-panel">
+                <div class="page-header" style="margin-bottom: 24px;">
+                    <div>
+                        <h2 style="font-family: var(--font-head); font-size: 1.5rem;">Active Jobs</h2>
+                        <div class="sub" style="color: var(--muted); font-size: 0.9rem;">Track progress on all your current work</div>
+                    </div>
+                </div>
+
                 <div class="kanban-board" id="kanban-board">
 
-                    <div class="kanban-column" id="kcol-new" data-stage="New" ondrop="drop(event,'New')"
-                        ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
-                        <div class="column-header">
-                            <div class="column-title">
-                                <div class="col-indicator ci-new"></div> New
-                            </div>
-                            <span class="column-count" id="cnt-new">0</span>
-                        </div>
-                        <div class="column-body" id="col-new"></div>
+            <div class="kanban-column" id="kcol-progress" data-stage="In Progress" ondrop="drop(event,'In Progress')"
+                ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+                <div class="column-header">
+                    <div class="column-title">
+                        <div class="col-indicator ci-progress"></div> In Progress
                     </div>
+                    <span class="column-count" id="cnt-progress">0</span>
+                </div>
+                <div class="column-body" id="col-progress"></div>
+            </div>
 
-                    <div class="kanban-column" id="kcol-scheduled" data-stage="Scheduled"
-                        ondrop="drop(event,'Scheduled')" ondragover="allowDrop(event)" ondragenter="dragEnter(event)"
-                        ondragleave="dragLeave(event)">
-                        <div class="column-header">
-                            <div class="column-title">
-                                <div class="col-indicator ci-scheduled"></div> Scheduled
-                            </div>
-                            <span class="column-count" id="cnt-scheduled">0</span>
-                        </div>
-                        <div class="column-body" id="col-scheduled"></div>
+            <div class="kanban-column" id="kcol-completed" data-stage="Completed" ondrop="drop(event,'Completed')"
+                ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+                <div class="column-header">
+                    <div class="column-title">
+                        <div class="col-indicator ci-completed"></div> Completed
                     </div>
+                    <span class="column-count" id="cnt-completed">0</span>
+                </div>
+                <div class="column-body" id="col-completed"></div>
+            </div>
 
-                    <div class="kanban-column" id="kcol-progress" data-stage="In Progress"
-                        ondrop="drop(event,'In Progress')" ondragover="allowDrop(event)" ondragenter="dragEnter(event)"
-                        ondragleave="dragLeave(event)">
-                        <div class="column-header">
-                            <div class="column-title">
-                                <div class="col-indicator ci-progress"></div> In Progress
-                            </div>
-                            <span class="column-count" id="cnt-progress">0</span>
-                        </div>
-                        <div class="column-body" id="col-progress"></div>
+            <div class="kanban-column" id="kcol-invoiced" data-stage="Invoiced" ondrop="drop(event,'Invoiced')"
+                ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+                <div class="column-header">
+                    <div class="column-title">
+                        <div class="col-indicator ci-invoiced"></div> Invoiced
                     </div>
-
-                    <div class="kanban-column" id="kcol-completed" data-stage="Completed"
-                        ondrop="drop(event,'Completed')" ondragover="allowDrop(event)" ondragenter="dragEnter(event)"
-                        ondragleave="dragLeave(event)">
-                        <div class="column-header">
-                            <div class="column-title">
-                                <div class="col-indicator ci-completed"></div> Completed
-                            </div>
-                            <span class="column-count" id="cnt-completed">0</span>
-                        </div>
-                        <div class="column-body" id="col-completed"></div>
-                    </div>
-
-                    <div class="kanban-column" id="kcol-invoiced" data-stage="Invoiced" ondrop="drop(event,'Invoiced')"
-                        ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
-                        <div class="column-header">
-                            <div class="column-title">
-                                <div class="col-indicator ci-invoiced"></div> Invoiced
-                            </div>
-                            <span class="column-count" id="cnt-invoiced">0</span>
-                        </div>
-                        <div class="column-body" id="col-invoiced"></div>
-                    </div>
+                    <span class="column-count" id="cnt-invoiced">0</span>
+                </div>
+                <div class="column-body" id="col-invoiced"></div>
+            </div>
 
                 </div>
             </div>
@@ -1494,7 +1478,7 @@
             // Persist to backend (no-op in demo)
             fetch(`/api/jobs/${id}/stage`, {
                 method: 'PATCH',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
@@ -1694,7 +1678,7 @@
                 if (userId) {
                     const res = await fetch(`/api/leads/${encodeURIComponent(leadId)}/accept`, {
                         method: 'POST',
-                        headers: { 
+                        headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${token}`
                         },
