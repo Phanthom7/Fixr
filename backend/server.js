@@ -4,6 +4,7 @@ const cors    = require('cors');
 const bcrypt  = require('bcryptjs');
 const admin   = require('firebase-admin');
 const path    = require('path');
+const rateLimit = require('express-rate-limit');
 
 const jwt = require('jsonwebtoken');
 
@@ -16,7 +17,20 @@ const db = admin.firestore();
 
 const app  = express();
 const port = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'fixr-super-secret-key';
+
+if (!process.env.JWT_SECRET) {
+    console.error('FATAL: JWT_SECRET environment variable is not set.');
+    process.exit(1);
+}
+const JWT_SECRET = process.env.JWT_SECRET;
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many attempts. Please try again in 15 minutes.' }
+});
 
 app.use(cors());
 app.use(express.json());
@@ -51,11 +65,11 @@ const requireAuth = (req, res, next) => {
 app.get('/api/health', (_req, res) => res.json({ status: 'OK', db: 'Firestore' }));
 
 // ── REGISTER: HOMEOWNER ───────────────────────────────────────────────────────
-app.post('/api/auth/register/homeowner', async (req, res) => {
+app.post('/api/auth/register/homeowner', authLimiter, async (req, res) => {
     const {
         name, email, password, phone,
         service, job_title, description,
-        urgency, property_type, home_size, budget_range, zip_code
+        urgency, property_type, home_size, budget_range, zip_code, photo_data
     } = req.body;
 
     if (!name || !email || !password || !service) {
@@ -89,12 +103,13 @@ app.post('/api/auth/register/homeowner', async (req, res) => {
             home_size: home_size || null,
             budget_range: budget_range || null,
             zip_code: zip_code || null,
+            photo_data: photo_data || null,
             status: 'New',
             assigned_contractor_id: null,
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
-        const token = jwt.sign({ userId: userRef.id, role: 'homeowner' }, JWT_SECRET);
+        const token = jwt.sign({ userId: userRef.id, role: 'homeowner' }, JWT_SECRET, { expiresIn: '7d' });
 
         res.status(201).json({
             message: 'Account created and request submitted!',
@@ -111,7 +126,7 @@ app.post('/api/auth/register/homeowner', async (req, res) => {
 });
 
 // ── REGISTER: CONTRACTOR ──────────────────────────────────────────────────────
-app.post('/api/auth/register/contractor', async (req, res) => {
+app.post('/api/auth/register/contractor', authLimiter, async (req, res) => {
     const { name, email, password, phone, trade, experience_years, plan } = req.body;
 
     if (!name || !email || !password || !phone || !trade) {
@@ -153,7 +168,7 @@ app.post('/api/auth/register/contractor', async (req, res) => {
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
-        const token = jwt.sign({ userId: userRef.id, role: 'contractor' }, JWT_SECRET);
+        const token = jwt.sign({ userId: userRef.id, role: 'contractor' }, JWT_SECRET, { expiresIn: '7d' });
 
         res.status(201).json({
             message:      'Account created! Your 14-day free trial has started.',
@@ -171,7 +186,7 @@ app.post('/api/auth/register/contractor', async (req, res) => {
 });
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
         return res.status(400).json({ error: 'Email and password are required.' });
@@ -191,7 +206,7 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password.' });
         }
 
-        const token = jwt.sign({ userId: userDoc.id, role: user.role }, JWT_SECRET);
+        const token = jwt.sign({ userId: userDoc.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
 
         res.json({
             message:      'Login successful',
@@ -214,10 +229,10 @@ app.get('/api/homeowner/leads/:userId', requireAuth, async (req, res) => {
     try {
         const snap = await db.collection('leads')
             .where('userId', '==', req.params.userId)
-            .orderBy('createdAt', 'desc')
             .get();
 
         const leads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        leads.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
         res.json(leads);
     } catch (err) {
         console.error(err);
@@ -230,10 +245,10 @@ app.get('/api/messages/:leadId', requireAuth, async (req, res) => {
     try {
         const snap = await db.collection('messages')
             .where('lead_id', '==', req.params.leadId)
-            .orderBy('createdAt', 'asc')
             .get();
 
         const messages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        messages.sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
         res.json(messages);
     } catch (err) {
         console.error(err);
@@ -268,10 +283,10 @@ app.get('/api/leads', requireAuth, async (req, res) => {
     try {
         const snap = await db.collection('leads')
             .where('status', 'in', ['New', 'Open'])
-            .orderBy('createdAt', 'desc')
             .get();
 
         const leads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        leads.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
         res.json(leads);
     } catch (err) {
         console.error(err);
@@ -286,27 +301,30 @@ app.post('/api/leads/:id/accept', requireAuth, async (req, res) => {
 
     try {
         const leadRef = db.collection('leads').doc(req.params.id);
-        const leadDoc = await leadRef.get();
-        
-        if (!leadDoc.exists) return res.status(404).json({ error: 'Lead not found.' });
-        if (leadDoc.data().status !== 'New' && leadDoc.data().status !== 'Open') {
-            return res.status(400).json({ error: 'Lead is no longer available.' });
-        }
+        const result = await db.runTransaction(async (transaction) => {
+            const leadDoc = await transaction.get(leadRef);
+            if (!leadDoc.exists) {
+                throw { status: 404, message: 'Lead not found.' };
+            }
+            const leadData = leadDoc.data();
+            if (leadData.status !== 'New' && leadData.status !== 'Open') {
+                throw { status: 400, message: 'Lead is no longer available.' };
+            }
 
-        const leadData = leadDoc.data();
+            transaction.update(leadRef, {
+                status: 'Matched',
+                assigned_contractor_id: contractor_user_id
+            });
 
-        // 1. Update lead
-        await leadRef.update({
-            status: 'Matched',
-            assigned_contractor_id: contractor_user_id
+            return leadData;
         });
 
         // 2. Check if client exists for this contractor, if not create one
         let clientId = null;
-        if (leadData.email) {
+        if (result.email) {
             const clientSnap = await db.collection('clients')
                 .where('contractor_user_id', '==', contractor_user_id)
-                .where('email', '==', leadData.email)
+                .where('email', '==', result.email)
                 .get();
             
             if (!clientSnap.empty) {
@@ -317,10 +335,10 @@ app.post('/api/leads/:id/accept', requireAuth, async (req, res) => {
         if (!clientId) {
             const clientRef = await db.collection('clients').add({
                 contractor_user_id,
-                name: leadData.name,
-                email: leadData.email || null,
-                phone: leadData.phone || null,
-                address: leadData.zip_code || null,
+                name: result.name,
+                email: result.email || null,
+                phone: result.phone || null,
+                address: result.zip_code || null,
                 notes: 'From Lead',
                 status: 'Active',
                 createdAt: admin.firestore.FieldValue.serverTimestamp()
@@ -332,13 +350,13 @@ app.post('/api/leads/:id/accept', requireAuth, async (req, res) => {
         const jobRef = await db.collection('jobs').add({
             contractor_user_id,
             client_id: clientId,
-            title: leadData.job_title || leadData.service,
-            description: leadData.description || null,
+            title: result.job_title || result.service,
+            description: result.description || null,
             stage: 'New',
             value: null,
             due_date: null,
-            trade: leadData.service,
-            priority: leadData.urgency === 'ASAP' ? 'Urgent' : 'Normal',
+            trade: result.service,
+            priority: result.urgency === 'ASAP' ? 'Urgent' : 'Normal',
             position: 0,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -346,6 +364,9 @@ app.post('/api/leads/:id/accept', requireAuth, async (req, res) => {
 
         res.json({ message: 'Lead accepted!', jobId: jobRef.id, clientId });
     } catch (err) {
+        if (err.status) {
+            return res.status(err.status).json({ error: err.message });
+        }
         console.error(err);
         res.status(500).json({ error: 'Failed to accept lead.' });
     }
@@ -357,10 +378,10 @@ app.get('/api/clients', requireAuth, async (req, res) => {
     try {
         const snap = await db.collection('clients')
             .where('contractor_user_id', '==', contractor_id)
-            .orderBy('createdAt', 'desc')
             .get();
 
         const clients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        clients.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
         res.json(clients);
     } catch (err) {
         console.error(err);
@@ -433,10 +454,10 @@ app.get('/api/jobs', requireAuth, async (req, res) => {
     try {
         const snap = await db.collection('jobs')
             .where('contractor_user_id', '==', contractor_id)
-            .orderBy('position', 'asc')
             .get();
 
         const jobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        jobs.sort((a, b) => (a.position || 0) - (b.position || 0));
         res.json(jobs);
     } catch (err) {
         console.error(err);
@@ -570,4 +591,7 @@ app.get('/api/subscriptions/:userId', requireAuth, async (req, res) => {
 });
 
 // ── START ─────────────────────────────────────────────────────────────────────
-app.listen(port, () => console.log(`🚀 Server running on port ${port}`));
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(port, () => console.log(`🚀 Server running on port ${port}`));
+}
+module.exports = app;
