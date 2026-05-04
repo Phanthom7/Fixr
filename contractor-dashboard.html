@@ -1627,17 +1627,47 @@
         }
 
         function updateDashboardOverview() {
-            // Update Revenue
+            // Update Revenue & Unpaid Invoices
             let revenue = 0;
+            let unpaid = 0;
+            let unpaidCount = 0;
+            
+            // For the chart (Mon - Sun)
+            let dailyEarnings = [0, 0, 0, 0, 0, 0, 0];
+            
             if (window.currentJobs) {
                 window.currentJobs.forEach(job => {
+                    const val = Number(job.value) || 0;
+                    
                     if (job.stage === 'Completed' || job.stage === 'Invoiced') {
-                        revenue += Number(job.value) || 0;
+                        revenue += val;
+                        
+                        // Add to chart data based on day of week
+                        // Sunday is 0, Monday is 1... We want Mon=0, Tue=1... Sun=6
+                        let date = job.createdAt ? new Date(job.createdAt) : new Date();
+                        let day = date.getDay(); 
+                        let chartIdx = day === 0 ? 6 : day - 1; 
+                        dailyEarnings[chartIdx] += val;
+                    }
+                    
+                    if (job.stage === 'Completed') {
+                        unpaid += val;
+                        unpaidCount++;
                     }
                 });
             }
             const revEl = document.getElementById('ov-revenue');
             if (revEl) revEl.textContent = '$' + revenue.toLocaleString();
+
+            const unpaidEl = document.getElementById('ov-unpaid');
+            if (unpaidEl) unpaidEl.textContent = '$' + unpaid.toLocaleString();
+            
+            const unpaidSubEl = document.getElementById('ov-unpaid-sub');
+            if (unpaidSubEl) unpaidSubEl.textContent = unpaidCount + ' invoices outstanding';
+            
+            if (window.Chart) {
+                renderOverviewChart(dailyEarnings);
+            }
 
             // Populate Recent Activity
             const list = document.getElementById('recent-activity-list');
@@ -2103,11 +2133,13 @@
             });
         }
 
-        function renderOverviewChart() {
+        function renderOverviewChart(earningsData) {
             const ctx = document.getElementById('overviewChart');
             if (!ctx) return;
             const existing = Chart.getChart('overviewChart');
             if (existing) existing.destroy();
+
+            const plotData = earningsData || [0, 0, 0, 0, 0, 0, 0];
 
             new Chart(ctx, {
                 type: 'line',
@@ -2115,7 +2147,7 @@
                     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                     datasets: [{
                         label: 'Earnings ($)',
-                        data: [250, 450, 300, 800, 600, 150, 0],
+                        data: plotData,
                         borderColor: '#C85A2A',
                         backgroundColor: 'rgba(200, 90, 42, 0.1)',
                         borderWidth: 3,
