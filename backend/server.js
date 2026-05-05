@@ -9,10 +9,17 @@ const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 
 // ── Firebase Init ─────────────────────────────────────────────────────────────
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+let serviceAccount;
+try {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+} catch (e) {
+    console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT:', e.message);
+    process.exit(1);
+}
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
 });
+
 const db = admin.firestore();
 
 const app  = express();
