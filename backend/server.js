@@ -1,9 +1,9 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
-const bcrypt = require('bcryptjs');
-const admin = require('firebase-admin');
-const path = require('path');
+const cors    = require('cors');
+const bcrypt  = require('bcryptjs');
+const admin   = require('firebase-admin');
+const path    = require('path');
 const rateLimit = require('express-rate-limit');
 
 const jwt = require('jsonwebtoken');
@@ -19,24 +19,15 @@ try {
     console.error('FATAL: Failed to parse FIREBASE_SERVICE_ACCOUNT:', err.message);
     process.exit(1);
 }
-
+ 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
 });
-
-app.get('/api/debug', (_req, res) => {
-    res.json({
-        has_firebase: !!process.env.FIREBASE_SERVICE_ACCOUNT,
-        has_jwt: !!process.env.JWT_SECRET,
-        firebase_length: process.env.FIREBASE_SERVICE_ACCOUNT?.length || 0,
-        node_env: process.env.NODE_ENV
-    });
-});
-
+ 
 
 const db = admin.firestore();
 
-const app = express();
+const app  = express();
 const port = process.env.PORT || 3000;
 
 if (!process.env.JWT_SECRET) {
@@ -134,9 +125,9 @@ app.post('/api/auth/register/homeowner', authLimiter, async (req, res) => {
 
         res.status(201).json({
             message: 'Account created and request submitted!',
-            userId: userRef.id,
-            leadId: leadRef.id,
-            role: 'homeowner',
+            userId:  userRef.id,
+            leadId:  leadRef.id,
+            role:    'homeowner',
             name,
             token
         });
@@ -154,7 +145,7 @@ app.post('/api/auth/register/contractor', authLimiter, async (req, res) => {
         return res.status(400).json({ error: 'Name, email, password, phone, and trade are required.' });
     }
 
-    const validPlans = ['Starter', 'Pro', 'Elite'];
+    const validPlans   = ['Starter', 'Pro', 'Elite'];
     const selectedPlan = validPlans.includes(plan) ? plan : 'Starter';
 
     try {
@@ -170,13 +161,13 @@ app.post('/api/auth/register/contractor', authLimiter, async (req, res) => {
 
         const userRef = await db.collection('users').add({
             name, email, password_hash,
-            role: 'contractor',
+            role:   'contractor',
             status: 'active',
             subscription: {
-                plan: selectedPlan,
-                status: 'trial',
+                plan:          selectedPlan,
+                status:        'trial',
                 trial_ends_at: trialEnd.toISOString(),
-                billing_date: null
+                billing_date:  null
             },
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
@@ -185,18 +176,18 @@ app.post('/api/auth/register/contractor', authLimiter, async (req, res) => {
             userId: userRef.id,
             name, email, phone, trade,
             experience_years: experience_years || null,
-            status: 'active',
+            status:    'active',
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
         const token = jwt.sign({ userId: userRef.id, role: 'contractor' }, JWT_SECRET, { expiresIn: '7d' });
 
         res.status(201).json({
-            message: 'Account created! Your 14-day free trial has started.',
-            userId: userRef.id,
+            message:      'Account created! Your 14-day free trial has started.',
+            userId:       userRef.id,
             contractorId: contractorRef.id,
-            plan: selectedPlan,
-            role: 'contractor',
+            plan:         selectedPlan,
+            role:         'contractor',
             name,
             token
         });
@@ -220,7 +211,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         }
 
         const userDoc = snap.docs[0];
-        const user = userDoc.data();
+        const user    = userDoc.data();
 
         const match = await bcrypt.compare(password, user.password_hash);
         if (!match) {
@@ -230,11 +221,11 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         const token = jwt.sign({ userId: userDoc.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
 
         res.json({
-            message: 'Login successful',
-            userId: userDoc.id,
-            role: user.role,
-            name: user.name,
-            status: user.status,
+            message:      'Login successful',
+            userId:       userDoc.id,
+            role:         user.role,
+            name:         user.name,
+            status:       user.status,
             subscription: user.subscription || null,
             token
         });
@@ -347,7 +338,7 @@ app.post('/api/leads/:id/accept', requireAuth, async (req, res) => {
                 .where('contractor_user_id', '==', contractor_user_id)
                 .where('email', '==', result.email)
                 .get();
-
+            
             if (!clientSnap.empty) {
                 clientId = clientSnap.docs[0].id;
             }
@@ -420,11 +411,11 @@ app.post('/api/clients', requireAuth, async (req, res) => {
     try {
         const ref = await db.collection('clients').add({
             contractor_user_id, name,
-            email: email || null,
-            phone: phone || null,
+            email:   email   || null,
+            phone:   phone   || null,
             address: address || null,
-            notes: notes || null,
-            status: status || 'Active',
+            notes:   notes   || null,
+            status:  status  || 'Active',
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
         res.status(201).json({ message: 'Client created', clientId: ref.id });
@@ -444,7 +435,7 @@ app.put('/api/clients/:id', requireAuth, async (req, res) => {
         if (!doc.exists || doc.data().contractor_user_id !== contractor_user_id) {
             return res.status(403).json({ error: 'Not authorized.' });
         }
-        await ref.update({ name, email: email || null, phone: phone || null, address: address || null, notes: notes || null, status: status || 'Active' });
+        await ref.update({ name, email: email||null, phone: phone||null, address: address||null, notes: notes||null, status: status||'Active' });
         res.json({ message: 'Client updated' });
     } catch (err) {
         console.error(err);
@@ -496,15 +487,15 @@ app.post('/api/jobs', requireAuth, async (req, res) => {
     try {
         const ref = await db.collection('jobs').add({
             contractor_user_id,
-            client_id: client_id || null,
+            client_id:   client_id   || null,
             title,
             description: description || null,
-            stage: stage || 'New',
-            value: value || null,
-            due_date: due_date || null,
-            trade: trade || null,
-            priority: priority || 'Normal',
-            position: 0,
+            stage:       stage       || 'New',
+            value:       value       || null,
+            due_date:    due_date    || null,
+            trade:       trade       || null,
+            priority:    priority    || 'Normal',
+            position:    0,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
@@ -526,10 +517,10 @@ app.put('/api/jobs/:id', requireAuth, async (req, res) => {
             return res.status(403).json({ error: 'Not authorized.' });
         }
         await ref.update({
-            title, description: description || null, stage: stage || 'New',
-            value: value || null, due_date: due_date || null, trade: trade || null,
-            priority: priority || 'Normal', client_id: client_id || null,
-            position: position || 0,
+            title, description: description||null, stage: stage||'New',
+            value: value||null, due_date: due_date||null, trade: trade||null,
+            priority: priority||'Normal', client_id: client_id||null,
+            position: position||0,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
         res.json({ message: 'Job updated' });
