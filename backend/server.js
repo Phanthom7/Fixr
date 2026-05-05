@@ -11,14 +11,19 @@ const jwt = require('jsonwebtoken');
 // ── Firebase Init ─────────────────────────────────────────────────────────────
 let serviceAccount;
 try {
-    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-} catch (e) {
-    console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT:', e.message);
+    const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT env var is not set');
+    // Fix escaped newlines in private_key that break JSON.parse
+    serviceAccount = JSON.parse(raw.replace(/\\n/g, '\n'));
+} catch (err) {
+    console.error('FATAL: Failed to parse FIREBASE_SERVICE_ACCOUNT:', err.message);
     process.exit(1);
 }
+ 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
 });
+ 
 
 const db = admin.firestore();
 
