@@ -4,17 +4,54 @@ const cors    = require('cors');
 const bcrypt  = require('bcryptjs');
 const admin   = require('firebase-admin');
 const path    = require('path');
+const fs      = require('fs');
 const rateLimit = require('express-rate-limit');
 
 const jwt = require('jsonwebtoken');
 
 // ── Firebase Init ─────────────────────────────────────────────────────────────
+const parseFirebaseServiceAccount = (raw) => {
+    try {
+        return JSON.parse(raw);
+    } catch (err) {
+        const normalized = raw.replace(
+            /("private_key"\s*:\s*")([\s\S]*?)(")/,
+            (_match, prefix, key, suffix) => prefix + key.replace(/\r?\n/g, '\\n') + suffix
+        );
+
+        return JSON.parse(normalized);
+    }
+};
+
+const loadFirebaseServiceAccount = () => {
+    const localServiceAccountPath = path.join(__dirname, 'firebase-service-account.json');
+    const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
+
+    if (raw) {
+        try {
+            return parseFirebaseServiceAccount(raw);
+        } catch (err) {
+            if (!fs.existsSync(localServiceAccountPath)) {
+                throw err;
+            }
+
+            console.warn('WARN: FIREBASE_SERVICE_ACCOUNT is invalid; using backend/firebase-service-account.json instead.');
+        }
+    }
+
+    if (fs.existsSync(localServiceAccountPath)) {
+        return require(localServiceAccountPath);
+    }
+
+    throw new Error('Set FIREBASE_SERVICE_ACCOUNT or add backend/firebase-service-account.json');
+};
+
 let serviceAccount;
 try {
-    const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
-    if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT env var is not set');
-    // Fix escaped newlines in private_key that break JSON.parse
-    serviceAccount = JSON.parse(raw.replace(/\\n/g, '\n'));
+    serviceAccount = loadFirebaseServiceAccount();
+    if (typeof serviceAccount.private_key === 'string') {
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    }
 } catch (err) {
     console.error('FATAL: Failed to parse FIREBASE_SERVICE_ACCOUNT:', err.message);
     process.exit(1);
