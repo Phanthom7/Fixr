@@ -91,7 +91,8 @@ app.use((err, req, res, next) => {
 });
 
 // Serve static frontend files
-app.use(express.static(path.join(__dirname, '../')));
+const frontendRoot = path.join(__dirname, '../');
+app.use(express.static(frontendRoot));
 
 console.log('✅ Firebase Admin connected to project:', serviceAccount.project_id);
 
@@ -637,6 +638,17 @@ app.get('/api/subscriptions/:userId', requireAuth, async (req, res) => {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch subscription.' });
     }
+});
+
+// ── FRONTEND ROUTES ──────────────────────────────────────────────────────────
+app.get('/', (_req, res) => {
+    res.sendFile(path.join(frontendRoot, 'index.html'));
+});
+
+app.get('/:page', (req, res, next) => {
+    const pagePath = path.join(frontendRoot, `${req.params.page}.html`);
+    if (!fs.existsSync(pagePath)) return next();
+    res.sendFile(pagePath);
 });
 
 // ── START ─────────────────────────────────────────────────────────────────────
