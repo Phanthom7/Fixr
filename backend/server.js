@@ -9,7 +9,7 @@ const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 
 // ── Firebase Init ─────────────────────────────────────────────────────────────
-const serviceAccount = require(path.join(__dirname, 'firebase-service-account.json'));
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
 });
