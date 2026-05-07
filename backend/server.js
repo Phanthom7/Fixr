@@ -327,6 +327,67 @@ app.post('/api/messages', requireAuth, async (req, res) => {
     }
 });
 
+async function getContractorName(contractorUserId) {
+    const userDoc = await db.collection('users').doc(contractorUserId).get();
+    if (userDoc.exists && userDoc.data().name) return userDoc.data().name;
+
+    const contractorSnap = await db.collection('contractors')
+        .where('userId', '==', contractorUserId)
+        .limit(1)
+        .get();
+    if (!contractorSnap.empty) return contractorSnap.docs[0].data().name || null;
+
+    return null;
+}
+
+async function createClientAndJobFromLead(leadId, leadData, contractorUserId, quoteData = null) {
+    let clientId = null;
+    if (leadData.email) {
+        const clientSnap = await db.collection('clients')
+            .where('contractor_user_id', '==', contractorUserId)
+            .where('email', '==', leadData.email)
+            .get();
+
+        if (!clientSnap.empty) {
+            clientId = clientSnap.docs[0].id;
+        }
+    }
+
+    if (!clientId) {
+        const clientRef = await db.collection('clients').add({
+            contractor_user_id: contractorUserId,
+            name: leadData.name,
+            email: leadData.email || null,
+            phone: leadData.phone || null,
+            address: leadData.zip_code || null,
+            notes: 'From Lead',
+            status: 'Active',
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        clientId = clientRef.id;
+    }
+
+    const jobRef = await db.collection('jobs').add({
+        contractor_user_id: contractorUserId,
+        client_id: clientId,
+        lead_id: leadId,
+        homeowner_user_id: leadData.userId || null,
+        quote_id: quoteData?.id || null,
+        title: leadData.job_title || leadData.service,
+        description: leadData.description || null,
+        stage: 'New',
+        value: quoteData?.total || null,
+        due_date: null,
+        trade: leadData.service,
+        priority: leadData.urgency === 'ASAP' ? 'Urgent' : 'Normal',
+        position: 0,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    return { clientId, jobId: jobRef.id };
+}
+
 // ── LEADS: GET ALL OPEN (contractor browse) ───────────────────────────────────
 app.get('/api/leads', requireAuth, async (req, res) => {
     if (req.user.role !== 'contractor') return res.status(403).json({ error: 'Forbidden' });
@@ -350,6 +411,7 @@ app.post('/api/leads/:id/accept', requireAuth, async (req, res) => {
     if (req.user.role !== 'contractor') return res.status(403).json({ error: 'Forbidden' });
 
     try {
+        const contractorName = await getContractorName(contractor_user_id);
         const leadRef = db.collection('leads').doc(req.params.id);
         const result = await db.runTransaction(async (transaction) => {
             const leadDoc = await transaction.get(leadRef);
@@ -363,62 +425,181 @@ app.post('/api/leads/:id/accept', requireAuth, async (req, res) => {
 
             transaction.update(leadRef, {
                 status: 'Matched',
-                assigned_contractor_id: contractor_user_id
+                assigned_contractor_id: contractor_user_id,
+                contractor_name: contractorName
             });
 
             return leadData;
         });
 
-        // 2. Check if client exists for this contractor, if not create one
-        let clientId = null;
-        if (result.email) {
-            const clientSnap = await db.collection('clients')
-                .where('contractor_user_id', '==', contractor_user_id)
-                .where('email', '==', result.email)
-                .get();
-            
-            if (!clientSnap.empty) {
-                clientId = clientSnap.docs[0].id;
-            }
-        }
-
-        if (!clientId) {
-            const clientRef = await db.collection('clients').add({
-                contractor_user_id,
-                name: result.name,
-                email: result.email || null,
-                phone: result.phone || null,
-                address: result.zip_code || null,
-                notes: 'From Lead',
-                status: 'Active',
-                createdAt: admin.firestore.FieldValue.serverTimestamp()
-            });
-            clientId = clientRef.id;
-        }
-
-        // 3. Create Job
-        const jobRef = await db.collection('jobs').add({
-            contractor_user_id,
-            client_id: clientId,
-            title: result.job_title || result.service,
-            description: result.description || null,
-            stage: 'New',
-            value: null,
-            due_date: null,
-            trade: result.service,
-            priority: result.urgency === 'ASAP' ? 'Urgent' : 'Normal',
-            position: 0,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
-
-        res.json({ message: 'Lead accepted!', jobId: jobRef.id, clientId });
+        const { clientId, jobId } = await createClientAndJobFromLead(req.params.id, result, contractor_user_id);
+        res.json({ message: 'Lead accepted!', jobId, clientId });
     } catch (err) {
         if (err.status) {
             return res.status(err.status).json({ error: err.message });
         }
         console.error(err);
         res.status(500).json({ error: 'Failed to accept lead.' });
+    }
+});
+
+// ── QUOTES: CONTRACTOR LIST ──────────────────────────────────────────────────
+app.get('/api/quotes', requireAuth, async (req, res) => {
+    if (req.user.role !== 'contractor') return res.status(403).json({ error: 'Forbidden' });
+    try {
+        const snap = await db.collection('quotes')
+            .where('contractor_user_id', '==', req.user.userId)
+            .get();
+
+        const quotes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        quotes.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+        res.json(quotes);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch quotes.' });
+    }
+});
+
+// ── QUOTES: HOMEOWNER LIST ───────────────────────────────────────────────────
+app.get('/api/homeowner/quotes/:userId', requireAuth, async (req, res) => {
+    if (req.user.userId !== req.params.userId) return res.status(403).json({ error: 'Forbidden' });
+    try {
+        const snap = await db.collection('quotes')
+            .where('homeowner_user_id', '==', req.params.userId)
+            .get();
+
+        const quotes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        quotes.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+        res.json(quotes);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch quotes.' });
+    }
+});
+
+// ── QUOTES: SEND ─────────────────────────────────────────────────────────────
+app.post('/api/quotes', requireAuth, async (req, res) => {
+    if (req.user.role !== 'contractor') return res.status(403).json({ error: 'Forbidden' });
+    const { lead_id, line_items, notes, valid_until } = req.body;
+    if (!lead_id || !Array.isArray(line_items) || line_items.length === 0) {
+        return res.status(400).json({ error: 'lead_id and at least one line item are required.' });
+    }
+
+    const items = line_items.map(item => {
+        const description = String(item.description || '').trim();
+        const quantity = Number(item.quantity);
+        const unit_price = Number(item.unit_price);
+        if (!description || !Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(unit_price) || unit_price < 0) {
+            return null;
+        }
+        return {
+            description,
+            quantity,
+            unit_price,
+            total: Math.round(quantity * unit_price * 100) / 100
+        };
+    });
+
+    if (items.some(item => item == null)) {
+        return res.status(400).json({ error: 'Each line item needs a description, positive quantity, and valid price.' });
+    }
+
+    try {
+        const leadRef = db.collection('leads').doc(lead_id);
+        const leadDoc = await leadRef.get();
+        if (!leadDoc.exists) return res.status(404).json({ error: 'Lead not found.' });
+
+        const lead = leadDoc.data();
+        if (!['New', 'Open', 'Quoted'].includes(lead.status)) {
+            return res.status(400).json({ error: 'Lead is no longer available for quoting.' });
+        }
+        if (lead.status === 'Quoted' && lead.assigned_contractor_id !== req.user.userId) {
+            return res.status(400).json({ error: 'Lead already has a quote from another contractor.' });
+        }
+
+        const contractorName = await getContractorName(req.user.userId);
+        const total = Math.round(items.reduce((sum, item) => sum + item.total, 0) * 100) / 100;
+        const quoteRef = await db.collection('quotes').add({
+            contractor_user_id: req.user.userId,
+            contractor_name: contractorName,
+            homeowner_user_id: lead.userId,
+            lead_id,
+            customer_name: lead.name || null,
+            customer_email: lead.email || null,
+            customer_phone: lead.phone || null,
+            project_title: lead.job_title || lead.service,
+            service: lead.service,
+            line_items: items,
+            subtotal: total,
+            total,
+            notes: notes || null,
+            valid_until: valid_until || null,
+            status: 'Sent',
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        await leadRef.update({
+            status: 'Quoted',
+            assigned_contractor_id: req.user.userId,
+            contractor_name: contractorName,
+            latest_quote_id: quoteRef.id,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        res.status(201).json({ message: 'Quote sent', quoteId: quoteRef.id, total });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to send quote.' });
+    }
+});
+
+// ── QUOTES: HOMEOWNER ACCEPT ─────────────────────────────────────────────────
+app.post('/api/quotes/:id/accept', requireAuth, async (req, res) => {
+    if (req.user.role !== 'homeowner') return res.status(403).json({ error: 'Forbidden' });
+    try {
+        const quoteRef = db.collection('quotes').doc(req.params.id);
+        const quoteDoc = await quoteRef.get();
+        if (!quoteDoc.exists) return res.status(404).json({ error: 'Quote not found.' });
+
+        const quote = quoteDoc.data();
+        if (quote.homeowner_user_id !== req.user.userId) {
+            return res.status(403).json({ error: 'Not authorized.' });
+        }
+        if (quote.status !== 'Sent') {
+            return res.status(400).json({ error: 'Quote has already been handled.' });
+        }
+
+        const leadRef = db.collection('leads').doc(quote.lead_id);
+        const leadDoc = await leadRef.get();
+        if (!leadDoc.exists) return res.status(404).json({ error: 'Lead not found.' });
+        const lead = leadDoc.data();
+
+        const { clientId, jobId } = await createClientAndJobFromLead(quote.lead_id, lead, quote.contractor_user_id, {
+            id: quoteDoc.id,
+            total: quote.total
+        });
+
+        await quoteRef.update({
+            status: 'Accepted',
+            acceptedAt: admin.firestore.FieldValue.serverTimestamp(),
+            job_id: jobId,
+            client_id: clientId,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        await leadRef.update({
+            status: 'Matched',
+            accepted_quote_id: quoteDoc.id,
+            assigned_contractor_id: quote.contractor_user_id,
+            contractor_name: quote.contractor_name || null,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        res.json({ message: 'Quote accepted', jobId, clientId });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to accept quote.' });
     }
 });
 
@@ -581,11 +762,19 @@ app.patch('/api/jobs/:id/stage', requireAuth, async (req, res) => {
         if (!doc.exists || doc.data().contractor_user_id !== req.user.userId) {
             return res.status(403).json({ error: 'Not authorized.' });
         }
+        const job = doc.data();
         await ref.update({
             stage,
             position: position || 0,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
+        if (job.lead_id) {
+            const customerStatus = stage === 'Completed' || stage === 'Invoiced' ? 'Complete' : stage;
+            await db.collection('leads').doc(job.lead_id).update({
+                status: customerStatus,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+        }
         res.json({ message: 'Stage updated' });
     } catch (err) {
         console.error(err);
