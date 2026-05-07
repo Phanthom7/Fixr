@@ -79,12 +79,63 @@
         .lead-meta { font-size: 0.8rem; color: var(--muted); margin-top: 6px; display: flex; gap: 16px; flex-wrap: wrap; }
         .lead-desc { font-size: 0.875rem; color: #4A4641; margin-top: 10px; line-height: 1.5; }
 
+        .status-track {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        .status-step {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            color: var(--muted);
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+        .status-step::before {
+            content: '';
+            height: 5px;
+            border-radius: 999px;
+            background: var(--border);
+        }
+        .status-step.done,
+        .status-step.active { color: var(--ink); }
+        .status-step.done::before,
+        .status-step.active::before { background: var(--orange); }
+        .lead-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .quote-card {
+            background: #fff; border: 1px solid var(--border);
+            border-radius: 12px; padding: 22px 24px; margin-bottom: 14px;
+            transition: box-shadow 0.18s;
+        }
+        .quote-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.07); }
+        .quote-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 14px; }
+        .quote-title { font-family: var(--font-heading); font-size: 1.1rem; font-weight: 600; }
+        .quote-contractor { font-size: 0.82rem; color: var(--muted); margin-top: 4px; }
+        .quote-lines { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 14px 0; }
+        .quote-line { display: grid; grid-template-columns: 1fr auto; gap: 12px; padding: 10px 0; font-size: 0.875rem; }
+        .quote-line + .quote-line { border-top: 1px solid var(--border); }
+        .quote-total { display: flex; justify-content: space-between; align-items: center; font-weight: 700; margin-top: 12px; }
+        .quote-total strong { font-family: var(--font-heading); color: var(--orange); font-size: 1.4rem; }
+        .quote-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
+
         .badge {
             display: inline-block; padding: 4px 12px; border-radius: 100px;
             font-size: 0.7rem; font-weight: 700; white-space: nowrap;
         }
         .badge-new      { background: #EFF6FF; color: #1D4ED8; }
         .badge-matched  { background: var(--orange-light); color: #a34821; }
+        .badge-quoted   { background: #FEF3C7; color: #92400E; }
         .badge-progress { background: #FEF3C7; color: #92400E; }
         .badge-done     { background: #D1FAE5; color: #065F46; }
 
@@ -102,6 +153,14 @@
             text-decoration: none; transition: background 0.2s;
         }
         .btn-cta:hover { background: #A34821; }
+        .btn-secondary {
+            display: inline-block; padding: 11px 18px;
+            background: #fff; color: var(--ink); border-radius: 8px;
+            border: 1px solid var(--border);
+            font-family: var(--font-body); font-size: 0.875rem; font-weight: 600;
+            cursor: pointer; transition: all 0.18s;
+        }
+        .btn-secondary:hover { border-color: var(--orange); color: var(--orange); background: var(--orange-light); }
 
         /* ── MESSAGES PANEL ── */
         .msg-select-hint { font-size: 0.9rem; color: var(--muted); padding: 40px; text-align: center; background: #fff; border: 1px solid var(--border); border-radius: 12px; }
@@ -177,6 +236,7 @@
 
     <div class="tabs">
         <button class="tab-btn active" data-tab="requests" onclick="switchTab('requests')">📋 My Requests</button>
+        <button class="tab-btn" data-tab="quotes" onclick="switchTab('quotes')">💵 Quotes</button>
         <button class="tab-btn" data-tab="messages" onclick="switchTab('messages')">💬 Messages</button>
     </div>
 
@@ -186,6 +246,16 @@
             <div class="empty-state">
                 <div class="es-icon">⏳</div>
                 <h3>Loading your requests…</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── QUOTES TAB ── -->
+    <div class="tab-panel" id="tab-quotes">
+        <div id="quotes-container">
+            <div class="empty-state">
+                <div class="es-icon">⏳</div>
+                <h3>Loading your quotes…</h3>
             </div>
         </div>
     </div>
@@ -237,6 +307,7 @@
     document.getElementById('welcome-heading').textContent = `Welcome back, ${name.split(' ')[0]} 👋`;
 
     let userLeads = [];
+    let userQuotes = [];
     let activeLeadId = null;
 
     // ── Tabs ─────────────────────────────────────────────────────────────────
@@ -245,8 +316,10 @@
             b.classList.toggle('active', b.getAttribute('data-tab') === tab);
         });
         document.getElementById('tab-requests').classList.toggle('active', tab === 'requests');
+        document.getElementById('tab-quotes').classList.toggle('active', tab === 'quotes');
         document.getElementById('tab-messages').classList.toggle('active', tab === 'messages');
         if (tab === 'messages') renderLeadSelector();
+        if (tab === 'quotes') loadQuotes();
     }
 
     // ── Status badge helper ───────────────────────────────────────────────────
@@ -254,8 +327,13 @@
         const map = {
             'New':         'badge-new',
             'Open':        'badge-new',
+            'Quoted':      'badge-quoted',
+            'Sent':        'badge-quoted',
             'Matched':     'badge-matched',
+            'Accepted':    'badge-done',
+            'Scheduled':   'badge-progress',
             'In Progress': 'badge-progress',
+            'Completed':   'badge-done',
             'Complete':    'badge-done'
         };
         return `<span class="badge ${map[status] || 'badge-new'}">${status}</span>`;
@@ -269,9 +347,99 @@
             });
             userLeads  = await res.json();
             renderLeads();
+            loadQuotes();
         } catch (e) {
             document.getElementById('leads-container').innerHTML =
                 `<div class="empty-state"><div class="es-icon">⚠️</div><h3>Could not load requests</h3><p>Make sure the server is running.</p></div>`;
+        }
+    }
+
+    function money(value) {
+        const amount = Number(value) || 0;
+        return '$' + amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    const CUSTOMER_STAGES = ['Quoted', 'Scheduled', 'In Progress', 'Complete'];
+
+    function customerStatusTrack(status) {
+        const normalized = status === 'New' || status === 'Open' || status === 'Matched' ? 'Quoted' : (status === 'Completed' ? 'Complete' : status);
+        const activeIdx = Math.max(0, CUSTOMER_STAGES.indexOf(normalized));
+        return `<div class="status-track" aria-label="Project progress">
+            ${CUSTOMER_STAGES.map((stage, idx) => `
+                <div class="status-step ${idx < activeIdx ? 'done' : (idx === activeIdx ? 'active' : '')}">
+                    <span>${stage === 'Quoted' ? 'Accepted' : stage}</span>
+                </div>
+            `).join('')}
+        </div>`;
+    }
+
+    async function loadQuotes() {
+        try {
+            const res = await fetch(`/api/homeowner/quotes/${userId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('API error');
+            userQuotes = await res.json();
+            renderQuotes();
+        } catch (e) {
+            document.getElementById('quotes-container').innerHTML =
+                `<div class="empty-state"><div class="es-icon">⚠️</div><h3>Could not load quotes</h3><p>Make sure the server is running.</p></div>`;
+        }
+    }
+
+    function renderQuotes() {
+        const wrap = document.getElementById('quotes-container');
+        if (!userQuotes.length) {
+            wrap.innerHTML = `
+                <div class="empty-state">
+                    <div class="es-icon">💵</div>
+                    <h3>No quotes yet</h3>
+                    <p>Contractor quotes for your requests will appear here.</p>
+                </div>`;
+            return;
+        }
+
+        wrap.innerHTML = userQuotes.map(q => {
+            const lines = (q.line_items || []).map(item => `
+                <div class="quote-line">
+                    <span>${escHtml(item.description)} <span style="color:var(--muted);">(${Number(item.quantity)} x ${money(item.unit_price)})</span></span>
+                    <strong>${money(item.total)}</strong>
+                </div>
+            `).join('');
+            const canAccept = q.status === 'Sent';
+            return `
+                <div class="quote-card">
+                    <div class="quote-header">
+                        <div>
+                            <div class="quote-title">${escHtml(q.project_title || 'Project quote')}</div>
+                            <div class="quote-contractor">${escHtml(q.contractor_name || 'Contractor')} · ${q.valid_until ? `Valid until ${escHtml(q.valid_until)}` : 'Quote sent'}</div>
+                        </div>
+                        ${statusBadge(q.status || 'Sent')}
+                    </div>
+                    <div class="quote-lines">${lines}</div>
+                    ${q.notes ? `<div class="lead-desc">${escHtml(q.notes)}</div>` : ''}
+                    <div class="quote-total"><span>Total</span><strong>${money(q.total)}</strong></div>
+                    ${canAccept ? `<div class="quote-actions"><button class="btn-cta" onclick="acceptQuote('${q.id}')">Accept Quote</button></div>` : ''}
+                </div>`;
+        }).join('');
+    }
+
+    async function acceptQuote(quoteId) {
+        try {
+            const res = await fetch(`/api/quotes/${quoteId}/accept`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                showToast('Quote accepted. Your contractor can start the job.', 'success');
+                loadLeads();
+                loadQuotes();
+            } else {
+                const data = await res.json().catch(() => ({}));
+                showToast(data.error || 'Failed to accept quote.', 'error');
+            }
+        } catch(e) {
+            showToast('Server error.', 'error');
         }
     }
 
@@ -288,7 +456,7 @@
             return;
         }
         wrap.innerHTML = userLeads.map(l => `
-            <div class="lead-card" onclick="openMessages('${l.id}', '${escHtml(l.job_title||l.service)}')">
+            <div class="lead-card">
                 <div class="lead-card-header">
                     <div>
                         <div class="lead-service">${escHtml(l.service)}</div>
@@ -304,6 +472,11 @@
                     <span>🗓 ${parseDate(l.createdAt || l.created_at).toLocaleDateString()}</span>
                 </div>
                 ${l.description ? `<div class="lead-desc">${escHtml(l.description).slice(0,160)}${l.description.length>160?'…':''}</div>` : ''}
+                ${customerStatusTrack(l.status)}
+                <div class="lead-actions">
+                    <button class="btn-secondary" onclick="openMessages('${l.id}', '${escHtml(l.job_title||l.service)}')">Message Contractor</button>
+                    ${l.status === 'Quoted' ? `<button class="btn-cta" onclick="switchTab('quotes')">Review Quote</button>` : ''}
+                </div>
             </div>`).join('');
     }
 
