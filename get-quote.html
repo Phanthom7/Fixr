@@ -348,6 +348,12 @@
                     <label for="u5">Just planning ahead</label>
                 </div>
             </div>
+
+            <div class="field">
+                <label>Photo of the problem (optional)</label>
+                <input type="file" id="photo" accept="image/jpeg,image/png,image/gif,image/webp">
+                <span class="hint" id="photo-status">Adding a photo helps contractors give you a better quote.</span>
+            </div>
         </div>
 
         <!-- ── Section 2: Property & Budget ── -->
@@ -466,6 +472,46 @@
         }
         if (preZip) document.getElementById('zip_code').value = preZip;
 
+        let uploadedPhotoUrl = null;
+        const photoInput = document.getElementById('photo');
+        const photoStatus = document.getElementById('photo-status');
+        photoInput.addEventListener('change', async () => {
+            const file = photoInput.files && photoInput.files[0];
+            if (!file) {
+                uploadedPhotoUrl = null;
+                photoStatus.textContent = 'Adding a photo helps contractors give you a better quote.';
+                return;
+            }
+            const fd = new FormData();
+            fd.append('photo', file);
+            photoStatus.textContent = 'Uploading…';
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            try {
+                const headers = {};
+                const existingToken = localStorage.getItem('fixr_token');
+                if (existingToken) headers['Authorization'] = `Bearer ${existingToken}`;
+                const res = await fetch('/api/upload-photo', { method: 'POST', headers, body: fd });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.url) {
+                    uploadedPhotoUrl = data.url;
+                    photoStatus.textContent = '✅ Photo attached.';
+                } else {
+                    uploadedPhotoUrl = null;
+                    photoInput.value = '';
+                    photoStatus.textContent = data.error || 'Upload failed. Please try again.';
+                    showToast(data.error || 'Upload failed.');
+                }
+            } catch (err) {
+                uploadedPhotoUrl = null;
+                photoInput.value = '';
+                photoStatus.textContent = 'Upload failed. Please try again.';
+                showToast('Could not upload photo.');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+
         function showToast(message, type = 'error') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -521,7 +567,8 @@
                         name, email, password, phone,
                         service, job_title, description,
                         urgency, property_type, home_size,
-                        budget_range, zip_code
+                        budget_range, zip_code,
+                        photo_url: uploadedPhotoUrl || null
                     })
                 });
                 const result = await res.json();
