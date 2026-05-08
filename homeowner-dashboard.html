@@ -424,6 +424,21 @@
     const name   = localStorage.getItem('fixr_name') || 'You';
     const token  = localStorage.getItem('fixr_token');
 
+    let _sessionExpired = false;
+    async function authFetch(url, options = {}) {
+        options.headers = options.headers || {};
+        options.headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch(url, options);
+        if (res.status === 401) {
+            if (_sessionExpired) return null;
+            _sessionExpired = true;
+            localStorage.clear();
+            window.location.href = 'login.html?session=expired';
+            return null;
+        }
+        return res;
+    }
+
     // Utility to prevent XSS
     function escHtml(str) {
         if (!str) return '';
@@ -717,7 +732,7 @@
             }
 
             const acceptBtn = canAccept
-                ? `<button class="btn-cta" onclick="acceptQuote('${q.id}')">Accept Quote</button>`
+                ? `<button class="btn-cta" onclick="acceptQuote('${q.id}', this)">Accept Quote</button>`
                 : '';
             const scheduleBtn = (isAccepted && !apptActive && !isSchedulerOpen)
                 ? `<button class="btn-cta" onclick="openScheduler('${q.id}')">Schedule Site Visit</button>`
@@ -830,7 +845,8 @@
         } catch (e) { showToast('Server error.', 'error'); }
     }
 
-    async function acceptQuote(quoteId) {
+    async function acceptQuote(quoteId, btn) {
+        if (btn) btn.disabled = true;
         try {
             const res = await fetch(`/api/quotes/${quoteId}/accept`, {
                 method: 'POST',
@@ -846,6 +862,8 @@
             }
         } catch(e) {
             showToast('Server error.', 'error');
+        } finally {
+            if (btn) btn.disabled = false;
         }
     }
 
@@ -958,6 +976,8 @@
         if (!body) return;
 
         const lead = userLeads.find(l => l.id === leadId);
+        const btn = document.querySelector('.msg-compose .btn-send');
+        if (btn) btn.disabled = true;
 
         try {
             const res = await fetch('/api/messages', {
@@ -977,6 +997,8 @@
             }
         } catch(e) {
             showToast('Server error.', 'error');
+        } finally {
+            if (btn) btn.disabled = false;
         }
     }
 

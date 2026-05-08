@@ -1786,11 +1786,14 @@
         }
 
         /* ══ JWT EXPIRY WRAPPER ══ */
+        let _sessionExpired = false;
         async function authFetch(url, options = {}) {
             options.headers = options.headers || {};
             options.headers['Authorization'] = `Bearer ${token}`;
             const res = await fetch(url, options);
             if (res.status === 401) {
+                if (_sessionExpired) return null;
+                _sessionExpired = true;
                 localStorage.clear();
                 window.location.href = 'login.html?session=expired';
                 return null;
@@ -2190,7 +2193,6 @@
                     const budget = lead.budget_range ? escHtml(lead.budget_range) : 'TBD';
                     const zip = lead.zip_code ? escHtml(lead.zip_code) : 'Unknown';
                     const desc = lead.description || 'No description provided.';
-                    const photoHtml = lead.photo_data ? `<img src="${lead.photo_data}" alt="Problem Photo" style="max-width: 100%; max-height: 200px; margin-top: 10px; border-radius: 8px; border: 1px solid var(--border);">` : '';
                     card.innerHTML = `
                         <div class="lead-body">
                             <div class="lead-service">${escHtml(lead.service)}</div>
@@ -2201,12 +2203,23 @@
                                 <span>💰 ${budget}</span>
                             </div>
                             <div class="lead-desc">${escHtml(desc)}</div>
-                            ${photoHtml}
+                            <div class="lead-photo-slot"></div>
                         </div>
                         <div class="lead-action">
                             <button class="btn btn-primary btn-sm" data-quote-lead-id="${escHtml(lead.id)}">Send Quote</button>
                         </div>
                     `;
+                    if (lead.photo_url) {
+                        const img = document.createElement('img');
+                        img.src = lead.photo_url;
+                        img.alt = 'Problem photo';
+                        img.style.maxWidth = '100%';
+                        img.style.maxHeight = '200px';
+                        img.style.marginTop = '10px';
+                        img.style.borderRadius = '8px';
+                        img.style.border = '1px solid var(--border)';
+                        card.querySelector('.lead-photo-slot').appendChild(img);
+                    }
                     card.addEventListener('click', () => openLeadModal(lead.id));
                     card.querySelector('[data-quote-lead-id]').addEventListener('click', (event) => {
                         event.stopPropagation();
@@ -2248,9 +2261,21 @@
                 </div>
             `).join('');
 
-            document.getElementById('lead-modal-photo').innerHTML = lead.photo_data
-                ? `<div class="detail-label">Photo</div><img src="${lead.photo_data}" alt="Problem Photo" style="max-width:100%; border-radius:8px; border:1px solid var(--border);">`
-                : '';
+            const photoSlot = document.getElementById('lead-modal-photo');
+            photoSlot.innerHTML = '';
+            if (lead.photo_url) {
+                const label = document.createElement('div');
+                label.className = 'detail-label';
+                label.textContent = 'Photo';
+                const img = document.createElement('img');
+                img.src = lead.photo_url;
+                img.alt = 'Problem photo';
+                img.style.maxWidth = '100%';
+                img.style.borderRadius = '8px';
+                img.style.border = '1px solid var(--border)';
+                photoSlot.appendChild(label);
+                photoSlot.appendChild(img);
+            }
 
             const btn = document.getElementById('lead-modal-quote-btn');
             btn.onclick = () => {

@@ -5,6 +5,9 @@ const bcrypt  = require('bcryptjs');
 const admin   = require('firebase-admin');
 const path    = require('path');
 const fs      = require('fs');
+const crypto  = require('crypto');
+const { Readable } = require('stream');
+const Busboy = require('busboy');
 const rateLimit = require('express-rate-limit');
 
 const jwt = require('jsonwebtoken');
@@ -58,11 +61,14 @@ try {
 }
  
 admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
+    credential: admin.credential.cert(serviceAccount),
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET
 });
- 
+
 
 const db = admin.firestore();
+// FIREBASE_STORAGE_BUCKET format: '<your-project-id>.appspot.com'
+const bucket = admin.storage().bucket(process.env.FIREBASE_STORAGE_BUCKET);
 
 const app  = express();
 const port = process.env.PORT || 3000;
@@ -119,23 +125,25 @@ app.post('/api/auth/register/homeowner', authLimiter, async (req, res) => {
     const {
         name, email, password, phone,
         service, job_title, description,
-        urgency, property_type, home_size, budget_range, zip_code, photo_data
+        urgency, property_type, home_size, budget_range, zip_code, photo_url
     } = req.body;
 
     if (!name || !email || !password || !service) {
         return res.status(400).json({ error: 'Name, email, password, and service are required.' });
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
     try {
         // Check duplicate email
-        const existing = await db.collection('users').where('email', '==', email).get();
+        const existing = await db.collection('users').where('email', '==', normalizedEmail).get();
         if (!existing.empty) {
             return res.status(409).json({ error: 'An account with this email already exists.' });
         }
 
         const password_hash = await bcrypt.hash(password, 10);
         const userRef = await db.collection('users').add({
-            name, email, password_hash,
+            name, email: normalizedEmail, password_hash,
             role: 'homeowner',
             status: 'active',
             createdAt: admin.firestore.FieldValue.serverTimestamp()
@@ -143,7 +151,7 @@ app.post('/api/auth/register/homeowner', authLimiter, async (req, res) => {
 
         const leadRef = await db.collection('leads').add({
             userId: userRef.id,
-            name, email,
+            name, email: normalizedEmail,
             phone: phone || null,
             service,
             job_title: job_title || null,
@@ -153,7 +161,7 @@ app.post('/api/auth/register/homeowner', authLimiter, async (req, res) => {
             home_size: home_size || null,
             budget_range: budget_range || null,
             zip_code: zip_code || null,
-            photo_data: photo_data || null,
+            photo_url: photo_url || null,
             status: 'New',
             assigned_contractor_id: null,
             createdAt: admin.firestore.FieldValue.serverTimestamp()
@@ -183,11 +191,13 @@ app.post('/api/auth/register/contractor', authLimiter, async (req, res) => {
         return res.status(400).json({ error: 'Name, email, password, phone, and trade are required.' });
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
     const validPlans   = ['Starter', 'Pro', 'Elite'];
     const selectedPlan = validPlans.includes(plan) ? plan : 'Starter';
 
     try {
-        const existing = await db.collection('users').where('email', '==', email).get();
+        const existing = await db.collection('users').where('email', '==', normalizedEmail).get();
         if (!existing.empty) {
             return res.status(409).json({ error: 'An account with this email already exists.' });
         }
@@ -198,7 +208,7 @@ app.post('/api/auth/register/contractor', authLimiter, async (req, res) => {
         trialEnd.setDate(trialEnd.getDate() + 14);
 
         const userRef = await db.collection('users').add({
-            name, email, password_hash,
+            name, email: normalizedEmail, password_hash,
             role:   'contractor',
             status: 'active',
             subscription: {
@@ -212,7 +222,7 @@ app.post('/api/auth/register/contractor', authLimiter, async (req, res) => {
 
         const contractorRef = await db.collection('contractors').add({
             userId: userRef.id,
-            name, email, phone, trade,
+            name, email: normalizedEmail, phone, trade,
             experience_years: experience_years || null,
             status:    'active',
             createdAt: admin.firestore.FieldValue.serverTimestamp()
@@ -242,8 +252,10 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         return res.status(400).json({ error: 'Email and password are required.' });
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
     try {
-        const snap = await db.collection('users').where('email', '==', email).get();
+        const snap = await db.collection('users').where('email', '==', normalizedEmail).get();
         if (snap.empty) {
             return res.status(401).json({ error: 'Invalid email or password.' });
         }
@@ -270,6 +282,61 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     } catch (err) {
         console.error('Login error:', err);
         res.status(500).json({ error: 'Login failed.' });
+    }
+});
+
+// ── FORGOT PASSWORD ───────────────────────────────────────────────────────────
+app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
+    const { email } = req.body || {};
+    if (!email) {
+        return res.status(400).json({ error: 'Email is required.' });
+    }
+    const normalizedEmail = email.toLowerCase().trim();
+    try {
+        const snap = await db.collection('users').where('email', '==', normalizedEmail).get();
+        if (!snap.empty) {
+            const userDoc = snap.docs[0];
+            const token = crypto.randomBytes(32).toString('hex');
+            const expiresAt = Date.now() + 3600000;
+            await db.collection('password_resets').add({
+                email: normalizedEmail,
+                token,
+                userId: userDoc.id,
+                expiresAt
+            });
+            const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+            console.log(`PASSWORD RESET LINK: ${baseUrl}/reset-password?token=${token}`);
+        }
+        res.json({ message: 'If that email exists, a reset link has been sent.' });
+    } catch (err) {
+        console.error('Forgot password error:', err);
+        res.status(500).json({ error: 'Failed to process request.' });
+    }
+});
+
+// ── RESET PASSWORD ────────────────────────────────────────────────────────────
+app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
+    const { token, password } = req.body || {};
+    if (!token || !password || password.length < 8) {
+        return res.status(400).json({ error: 'Token and a password of at least 8 characters are required.' });
+    }
+    try {
+        const snap = await db.collection('password_resets').where('token', '==', token).limit(1).get();
+        if (snap.empty) {
+            return res.status(400).json({ error: 'Reset link is invalid or has expired.' });
+        }
+        const resetDoc = snap.docs[0];
+        const reset = resetDoc.data();
+        if (!reset.expiresAt || reset.expiresAt < Date.now()) {
+            return res.status(400).json({ error: 'Reset link is invalid or has expired.' });
+        }
+        const password_hash = await bcrypt.hash(password, 10);
+        await db.collection('users').doc(reset.userId).update({ password_hash });
+        await resetDoc.ref.delete();
+        res.json({ message: 'Password updated. You can now log in.' });
+    } catch (err) {
+        console.error('Reset password error:', err);
+        res.status(500).json({ error: 'Failed to reset password.' });
     }
 });
 
@@ -836,6 +903,9 @@ app.post('/api/jobs', requireAuth, async (req, res) => {
 app.put('/api/jobs/:id', requireAuth, async (req, res) => {
     const { title, description, stage, value, due_date, trade, priority, client_id, position } = req.body;
     const contractor_user_id = req.user.userId;
+    if (!title) {
+        return res.status(400).json({ error: 'title is required.' });
+    }
     try {
         const ref = db.collection('jobs').doc(req.params.id);
         const doc = await ref.get();
@@ -1097,6 +1167,93 @@ app.get('/api/subscriptions/:userId', requireAuth, async (req, res) => {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch subscription.' });
     }
+});
+
+// ── PHOTO UPLOAD ──────────────────────────────────────────────────────────────
+const ALLOWED_IMAGE_MIMES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']);
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+
+app.post('/api/upload-photo', requireAuth, (req, res) => {
+    let busboy;
+    try {
+        busboy = Busboy({ headers: req.headers, limits: { fileSize: MAX_PHOTO_BYTES, files: 1 } });
+    } catch (err) {
+        return res.status(400).json({ error: 'Invalid upload request.' });
+    }
+
+    let responded = false;
+    const sendError = (status, message) => {
+        if (responded) return;
+        responded = true;
+        res.status(status).json({ error: message });
+    };
+
+    let fileHandled = false;
+    busboy.on('file', (fieldname, file, info) => {
+        if (fieldname !== 'photo') {
+            file.resume();
+            return;
+        }
+        if (fileHandled) {
+            file.resume();
+            return;
+        }
+        fileHandled = true;
+
+        const mimetype = (info && info.mimeType) || '';
+        if (!ALLOWED_IMAGE_MIMES.has(mimetype.toLowerCase())) {
+            file.resume();
+            return sendError(400, 'Only image files are allowed.');
+        }
+
+        const ext = mimetype.split('/')[1] || 'bin';
+        const filename = `lead-photos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const remoteFile = bucket.file(filename);
+        const writeStream = remoteFile.createWriteStream({ metadata: { contentType: mimetype } });
+
+        let oversize = false;
+        file.on('limit', () => {
+            oversize = true;
+            writeStream.destroy();
+            sendError(400, 'File is too large. Max 10MB.');
+        });
+
+        file.on('error', (err) => {
+            writeStream.destroy(err);
+        });
+
+        writeStream.on('error', (err) => {
+            if (oversize) return;
+            console.error('Upload write error:', err);
+            sendError(500, 'Failed to upload photo.');
+        });
+
+        writeStream.on('finish', async () => {
+            if (oversize || responded) return;
+            try {
+                await remoteFile.makePublic();
+                const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
+                responded = true;
+                res.status(201).json({ url: publicUrl });
+            } catch (err) {
+                console.error('Make public error:', err);
+                sendError(500, 'Failed to finalize upload.');
+            }
+        });
+
+        file.pipe(writeStream);
+    });
+
+    busboy.on('error', (err) => {
+        console.error('Busboy error:', err);
+        sendError(500, 'Upload failed.');
+    });
+
+    busboy.on('finish', () => {
+        if (!fileHandled) sendError(400, 'No photo provided.');
+    });
+
+    req.pipe(busboy);
 });
 
 // ── FRONTEND ROUTES ──────────────────────────────────────────────────────────
