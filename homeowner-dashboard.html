@@ -202,6 +202,153 @@
         }
         .lead-sel-btn:hover, .lead-sel-btn.active { border-color: var(--orange); background: var(--orange-light); }
 
+        /* ── SYSTEM MESSAGE PILL ── */
+        .msg-system {
+            align-self: center; max-width: 80%;
+            background: var(--cream); border-radius: 999px;
+            padding: 6px 14px; font-size: 0.72rem; color: var(--muted);
+            text-align: center; letter-spacing: 0.2px;
+        }
+
+        /* ── SCHEDULE REGION (inline on accepted quote card) ── */
+        .schedule-region {
+            margin-top: 22px; padding-top: 20px;
+            border-top: 1px solid var(--border);
+            animation: schedReveal 220ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        @keyframes schedReveal {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .sched-prompt {
+            font-family: var(--font-heading); font-size: 1.05rem;
+            font-weight: 600; margin-bottom: 2px;
+        }
+        .sched-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 18px; }
+        .sched-label {
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 1px;
+            text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+        }
+        .date-row {
+            display: flex; align-items: stretch; gap: 8px; margin-bottom: 6px;
+        }
+        .date-strip {
+            flex: 1; display: flex; gap: 10px;
+            overflow-x: auto; padding: 4px 2px 10px; scroll-behavior: smooth;
+            scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+        }
+        .date-strip::-webkit-scrollbar { height: 6px; }
+        .date-strip::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        .date-chip {
+            flex: 0 0 64px; padding: 10px 6px 12px; text-align: center;
+            background: var(--cream); border: 1px solid var(--border);
+            border-radius: 10px; cursor: pointer;
+            transition: background 220ms cubic-bezier(0.22, 1, 0.36, 1),
+                        border-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+                        transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .date-chip:hover { background: #fff; transform: translateY(-1px); }
+        .date-chip .dow {
+            display: block; font-size: 0.62rem; font-weight: 700;
+            letter-spacing: 1px; color: var(--muted); text-transform: uppercase;
+        }
+        .date-chip .dom {
+            display: block; font-family: var(--font-heading);
+            font-size: 1.4rem; font-weight: 600; color: var(--ink); margin-top: 4px;
+        }
+        .date-chip.selected { background: var(--ink); border-color: var(--ink); }
+        .date-chip.selected .dow { color: rgba(245, 240, 232, 0.65); }
+        .date-chip.selected .dom { color: var(--cream); }
+        .strip-arrow {
+            flex: 0 0 36px; background: #fff; border: 1px solid var(--border);
+            border-radius: 10px; cursor: pointer; color: var(--muted);
+            font-size: 1.1rem; transition: color 0.18s, border-color 0.18s;
+        }
+        .strip-arrow:hover { color: var(--orange); border-color: var(--orange); }
+
+        .time-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 8px; margin-top: 8px;
+        }
+        @media (min-width: 520px) { .time-grid { grid-template-columns: repeat(4, 1fr); } }
+        .time-pill {
+            padding: 11px 12px; background: var(--cream);
+            border: 1px solid var(--border); border-radius: 8px;
+            cursor: pointer; font-size: 0.875rem; font-family: var(--font-body);
+            text-align: center; color: var(--ink);
+            transition: background 220ms cubic-bezier(0.22, 1, 0.36, 1),
+                        border-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+                        color 220ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .time-pill:hover { background: #fff; border-color: var(--orange); }
+        .time-pill.selected { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+        .sched-notes {
+            width: 100%; padding: 12px 14px; border: 1px solid var(--border);
+            border-radius: 8px; font-family: var(--font-body); font-size: 0.875rem;
+            background: var(--cream); resize: vertical; min-height: 76px;
+            outline: none; transition: background 0.18s, border-color 0.18s;
+        }
+        .sched-notes:focus { background: #fff; border-color: var(--orange); }
+        .sched-notes-meta {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.7rem; color: var(--muted); margin-top: 4px;
+        }
+        .sched-notes-meta.populated { color: var(--ink); }
+
+        .sched-actions {
+            display: flex; justify-content: flex-end; align-items: center;
+            gap: 10px; margin-top: 22px;
+        }
+        .sched-actions .btn-cancel-link {
+            background: none; border: none; color: var(--muted);
+            font-family: var(--font-body); font-size: 0.85rem; cursor: pointer;
+            padding: 8px 4px; transition: color 0.18s;
+        }
+        .sched-actions .btn-cancel-link:hover { color: var(--ink); }
+        .btn-cta:disabled {
+            opacity: 0.45; cursor: not-allowed;
+            background: var(--orange);
+        }
+
+        /* ── APPOINTMENT STATUS BLOCK ── */
+        .appt-status {
+            margin-top: 22px; padding: 16px 18px;
+            background: var(--cream); border-radius: 10px;
+            display: flex; align-items: center; gap: 16px;
+        }
+        .appt-glyph {
+            width: 50px; height: 54px; border-radius: 8px;
+            background: #fff; border: 1px solid var(--border);
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; flex-shrink: 0;
+        }
+        .appt-glyph .month {
+            font-size: 0.58rem; font-weight: 700; letter-spacing: 1.2px;
+            text-transform: uppercase; color: var(--orange);
+        }
+        .appt-glyph .day {
+            font-family: var(--font-heading); font-size: 1.35rem;
+            font-weight: 700; color: var(--ink); line-height: 1; margin-top: 2px;
+        }
+        .appt-info { flex: 1; min-width: 0; }
+        .appt-info .when {
+            font-weight: 600; font-size: 0.95rem;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .appt-info .meta { font-size: 0.78rem; margin-top: 2px; color: var(--muted); }
+        .appt-info .meta.pending { color: #92400E; }
+        .appt-info .meta.confirmed { color: #047857; }
+        .appt-info .meta.declined { color: #B91C1C; }
+        .btn-ghost-sm {
+            padding: 7px 14px; background: transparent;
+            border: 1px solid var(--border); border-radius: 8px;
+            font-size: 0.78rem; font-family: var(--font-body); font-weight: 600;
+            cursor: pointer; color: var(--muted);
+            transition: color 0.18s, border-color 0.18s;
+        }
+        .btn-ghost-sm:hover { color: var(--ink); border-color: var(--ink); }
+
         /* ── TOAST ── */
         #toast-container { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
         .toast {
@@ -309,6 +456,9 @@
     let userLeads = [];
     let userQuotes = [];
     let activeLeadId = null;
+    let leadAppointments = {};       // lead_id -> appointment doc (latest active)
+    let scheduleDraft = {};          // quote_id -> { dateOffset, hour, notes, stripStart }
+    let openSchedulerForQuote = null; // quote_id currently expanded
 
     // ── Tabs ─────────────────────────────────────────────────────────────────
     function switchTab(tab) {
@@ -373,8 +523,33 @@
         </div>`;
     }
 
+    async function loadAppointmentsForUser() {
+        try {
+            const res = await fetch('/api/appointments', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) return;
+            const list = await res.json();
+            leadAppointments = {};
+            // Latest non-cancelled/declined appointment per lead wins.
+            list.forEach(a => {
+                const cur = leadAppointments[a.lead_id];
+                const aActive = a.status === 'proposed' || a.status === 'confirmed';
+                if (!cur) { leadAppointments[a.lead_id] = a; return; }
+                const curActive = cur.status === 'proposed' || cur.status === 'confirmed';
+                if (aActive && !curActive) leadAppointments[a.lead_id] = a;
+                else if (aActive === curActive) {
+                    const at = a.scheduled_at?._seconds || 0;
+                    const ct = cur.scheduled_at?._seconds || 0;
+                    if (at > ct) leadAppointments[a.lead_id] = a;
+                }
+            });
+        } catch (e) { /* non-fatal */ }
+    }
+
     async function loadQuotes() {
         try {
+            await loadAppointmentsForUser();
             const res = await fetch(`/api/homeowner/quotes/${userId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -385,6 +560,124 @@
             document.getElementById('quotes-container').innerHTML =
                 `<div class="empty-state"><div class="es-icon">⚠️</div><h3>Could not load quotes</h3><p>Make sure the server is running.</p></div>`;
         }
+    }
+
+    const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const DOWS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const SCHED_HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+
+    function fmtHour(h) {
+        const period = h >= 12 ? 'PM' : 'AM';
+        const display = ((h + 11) % 12) + 1;
+        return `${display}:00 ${period}`;
+    }
+
+    function startOfTomorrow() {
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }
+
+    function dateAtOffset(stripStart, offset) {
+        const d = new Date(stripStart);
+        d.setDate(stripStart.getDate() + offset);
+        return d;
+    }
+
+    function renderApptStatusBlock(appt) {
+        const when = parseDate(appt.scheduled_at);
+        const month = MONTHS_SHORT[when.getMonth()];
+        const day = when.getDate();
+        const dow = DOWS_SHORT[when.getDay()];
+        const time = when.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        const status = appt.status;
+
+        let metaText, metaClass, button;
+        if (status === 'proposed') {
+            metaText = 'Awaiting contractor confirmation';
+            metaClass = 'pending';
+            button = `<button class="btn-ghost-sm" onclick="cancelAppointment('${appt.id}')">Withdraw</button>`;
+        } else if (status === 'confirmed') {
+            metaText = 'Confirmed by your contractor';
+            metaClass = 'confirmed';
+            button = `<button class="btn-ghost-sm" onclick="cancelAppointment('${appt.id}')">Cancel</button>`;
+        } else if (status === 'declined') {
+            metaText = 'Contractor declined this time. Propose another.';
+            metaClass = 'declined';
+            button = '';
+        } else {
+            return '';
+        }
+
+        return `<div class="appt-status">
+            <div class="appt-glyph">
+                <span class="month">${month}</span>
+                <span class="day">${day}</span>
+            </div>
+            <div class="appt-info">
+                <div class="when">${escHtml(dow)}, ${escHtml(month)} ${day} · ${escHtml(time)}</div>
+                <div class="meta ${metaClass}">${metaText}</div>
+            </div>
+            ${button}
+        </div>`;
+    }
+
+    function buildDateStripHtml(quoteId, draft) {
+        const start = startOfTomorrow();
+        const stripStart = new Date(start);
+        stripStart.setDate(start.getDate() + (draft.stripStart || 0));
+
+        const chips = Array.from({ length: 7 }, (_, i) => {
+            const d = dateAtOffset(stripStart, i);
+            const offset = (draft.stripStart || 0) + i;
+            const selected = draft.dateOffset === offset ? 'selected' : '';
+            return `<button class="date-chip ${selected}" onclick="pickScheduleDate('${quoteId}', ${offset})">
+                <span class="dow">${DOWS_SHORT[d.getDay()]}</span>
+                <span class="dom">${d.getDate()}</span>
+            </button>`;
+        }).join('');
+
+        return `<div class="date-row">
+            <div class="date-strip" id="date-strip-${quoteId}">${chips}</div>
+            <button class="strip-arrow" onclick="advanceStripWeek('${quoteId}', 1)" aria-label="Show next week">›</button>
+        </div>`;
+    }
+
+    function buildTimeGridHtml(quoteId, draft) {
+        if (draft.dateOffset === undefined || draft.dateOffset === null) {
+            return `<div style="font-size:0.82rem;color:var(--muted);margin-top:8px;">Pick a date to see time slots.</div>`;
+        }
+        const pills = SCHED_HOURS.map(h => {
+            const selected = draft.hour === h ? 'selected' : '';
+            return `<button class="time-pill ${selected}" onclick="pickScheduleTime('${quoteId}', ${h})">${fmtHour(h)}</button>`;
+        }).join('');
+        return `<div class="time-grid">${pills}</div>`;
+    }
+
+    function buildScheduleRegion(quote) {
+        const draft = scheduleDraft[quote.id] || {};
+        const notes = draft.notes || '';
+        const canSubmit = draft.dateOffset !== undefined && draft.dateOffset !== null && draft.hour !== undefined;
+        return `<div class="schedule-region" id="sched-${quote.id}">
+            <div class="sched-prompt">Pick a time for the site visit</div>
+            <div class="sched-sub">Your contractor will confirm or suggest another time.</div>
+            <div class="sched-label">Date</div>
+            ${buildDateStripHtml(quote.id, draft)}
+            <div class="sched-label" style="margin-top:18px;">Time</div>
+            ${buildTimeGridHtml(quote.id, draft)}
+            <div class="sched-label" style="margin-top:18px;">Notes <span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--muted);">(optional)</span></div>
+            <textarea class="sched-notes" id="sched-notes-${quote.id}" placeholder="What should they expect to look at? Any access details?"
+                maxlength="200" oninput="updateScheduleNotes('${quote.id}', this.value)">${escHtml(notes)}</textarea>
+            <div class="sched-notes-meta ${notes.length ? 'populated' : ''}">
+                <span>${notes.length ? `${notes.length} of 200 characters` : ''}</span>
+                <span>${200 - notes.length} left</span>
+            </div>
+            <div class="sched-actions">
+                <button class="btn-cancel-link" onclick="closeScheduler('${quote.id}')">Cancel</button>
+                <button class="btn-cta" ${canSubmit ? '' : 'disabled'} onclick="submitAppointment('${quote.id}')">Request this time</button>
+            </div>
+        </div>`;
     }
 
     function renderQuotes() {
@@ -407,6 +700,29 @@
                 </div>
             `).join('');
             const canAccept = q.status === 'Sent';
+            const isAccepted = q.status === 'Accepted';
+            const appt = q.lead_id ? leadAppointments[q.lead_id] : null;
+            const apptActive = appt && (appt.status === 'proposed' || appt.status === 'confirmed');
+            const isSchedulerOpen = openSchedulerForQuote === q.id;
+
+            let scheduleArea = '';
+            if (isAccepted) {
+                if (apptActive) {
+                    scheduleArea = renderApptStatusBlock(appt);
+                } else if (isSchedulerOpen) {
+                    scheduleArea = buildScheduleRegion(q);
+                } else if (appt && appt.status === 'declined') {
+                    scheduleArea = renderApptStatusBlock(appt);
+                }
+            }
+
+            const acceptBtn = canAccept
+                ? `<button class="btn-cta" onclick="acceptQuote('${q.id}')">Accept Quote</button>`
+                : '';
+            const scheduleBtn = (isAccepted && !apptActive && !isSchedulerOpen)
+                ? `<button class="btn-cta" onclick="openScheduler('${q.id}')">Schedule Site Visit</button>`
+                : '';
+
             return `
                 <div class="quote-card">
                     <div class="quote-header">
@@ -419,9 +735,99 @@
                     <div class="quote-lines">${lines}</div>
                     ${q.notes ? `<div class="lead-desc">${escHtml(q.notes)}</div>` : ''}
                     <div class="quote-total"><span>Total</span><strong>${money(q.total)}</strong></div>
-                    ${canAccept ? `<div class="quote-actions"><button class="btn-cta" onclick="acceptQuote('${q.id}')">Accept Quote</button></div>` : ''}
+                    ${(acceptBtn || scheduleBtn) ? `<div class="quote-actions">${acceptBtn}${scheduleBtn}</div>` : ''}
+                    ${scheduleArea}
                 </div>`;
         }).join('');
+    }
+
+    // ── Scheduler interactions ───────────────────────────────────────────────
+    function openScheduler(quoteId) {
+        openSchedulerForQuote = quoteId;
+        if (!scheduleDraft[quoteId]) scheduleDraft[quoteId] = { stripStart: 0 };
+        renderQuotes();
+    }
+    function closeScheduler(quoteId) {
+        openSchedulerForQuote = null;
+        delete scheduleDraft[quoteId];
+        renderQuotes();
+    }
+    function pickScheduleDate(quoteId, offset) {
+        scheduleDraft[quoteId] = { ...(scheduleDraft[quoteId] || {}), dateOffset: offset };
+        renderQuotes();
+    }
+    function pickScheduleTime(quoteId, hour) {
+        scheduleDraft[quoteId] = { ...(scheduleDraft[quoteId] || {}), hour };
+        renderQuotes();
+    }
+    function updateScheduleNotes(quoteId, value) {
+        // Don't re-render on every keystroke (would steal focus). Update meta line only.
+        scheduleDraft[quoteId] = { ...(scheduleDraft[quoteId] || {}), notes: value };
+        const meta = document.querySelector(`#sched-${quoteId} .sched-notes-meta`);
+        if (!meta) return;
+        meta.classList.toggle('populated', value.length > 0);
+        const left = 200 - value.length;
+        meta.innerHTML = `<span>${value.length ? `${value.length} of 200 characters` : ''}</span><span>${left} left</span>`;
+    }
+    function advanceStripWeek(quoteId, direction) {
+        const draft = scheduleDraft[quoteId] || { stripStart: 0 };
+        const next = (draft.stripStart || 0) + direction * 7;
+        scheduleDraft[quoteId] = { ...draft, stripStart: Math.max(0, next) };
+        renderQuotes();
+    }
+    async function submitAppointment(quoteId) {
+        const draft = scheduleDraft[quoteId];
+        const quote = userQuotes.find(q => q.id === quoteId);
+        if (!draft || draft.dateOffset === undefined || draft.hour === undefined || !quote) return;
+
+        const start = startOfTomorrow();
+        const when = new Date(start);
+        when.setDate(start.getDate() + draft.dateOffset);
+        when.setHours(draft.hour, 0, 0, 0);
+
+        try {
+            const res = await fetch('/api/appointments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({
+                    lead_id: quote.lead_id,
+                    scheduled_at: when.toISOString(),
+                    duration_minutes: 60,
+                    type: 'site_visit',
+                    notes: draft.notes || null
+                })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok) {
+                showToast('Time requested. We will let you know when your contractor confirms.', 'success');
+                openSchedulerForQuote = null;
+                delete scheduleDraft[quoteId];
+                await loadAppointmentsForUser();
+                renderQuotes();
+            } else {
+                showToast(data.error || 'Could not propose this time.', 'error');
+            }
+        } catch (e) {
+            showToast('Server error.', 'error');
+        }
+    }
+    async function cancelAppointment(apptId) {
+        if (!confirm('Cancel this appointment?')) return;
+        try {
+            const res = await fetch(`/api/appointments/${apptId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ status: 'cancelled' })
+            });
+            if (res.ok) {
+                showToast('Appointment cancelled.', 'success');
+                await loadAppointmentsForUser();
+                renderQuotes();
+            } else {
+                const data = await res.json().catch(() => ({}));
+                showToast(data.error || 'Could not cancel.', 'error');
+            }
+        } catch (e) { showToast('Server error.', 'error'); }
     }
 
     async function acceptQuote(quoteId) {
@@ -518,6 +924,9 @@
         const contractorName = lead?.contractor_name || 'Your contractor';
 
         const bubbles = msgs.length ? msgs.map(m => {
+            if (m.is_system || m.sender_id === 'system') {
+                return `<div class="msg-system">${escHtml(m.body)}</div>`;
+            }
             const sent = String(m.sender_id) === String(userId);
             const time = parseDate(m.createdAt || m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
             return `<div class="msg-bubble ${sent?'sent':'recv'}">
@@ -549,26 +958,22 @@
         if (!body) return;
 
         const lead = userLeads.find(l => l.id === leadId);
-        const receiverId = lead?.assigned_contractor_id;
-        if (!receiverId) {
-            showToast('No contractor assigned to this request yet.', 'error');
-            return;
-        }
 
         try {
             const res = await fetch('/api/messages', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ lead_id: leadId, sender_id: userId, receiver_id: receiverId, body })
+                body: JSON.stringify({ lead_id: leadId, body })
             });
             if (res.ok) {
                 input.value = '';
-                loadMessages(leadId, lead.job_title || lead.service);
+                loadMessages(leadId, lead?.job_title || lead?.service);
             } else {
-                showToast('Failed to send message.', 'error');
+                const data = await res.json().catch(() => ({}));
+                showToast(data.error || 'Failed to send message.', 'error');
             }
         } catch(e) {
             showToast('Server error.', 'error');

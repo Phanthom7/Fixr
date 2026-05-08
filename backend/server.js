@@ -290,9 +290,29 @@ app.get('/api/homeowner/leads/:userId', requireAuth, async (req, res) => {
     }
 });
 
+// Resolve the parties on a lead from the perspective of `userId`.
+// Returns { lead, leadId, counterpartId } or throws { status, message }.
+async function resolveLeadParties(leadId, userId) {
+    const leadDoc = await db.collection('leads').doc(leadId).get();
+    if (!leadDoc.exists) throw { status: 404, message: 'Lead not found.' };
+    const lead = leadDoc.data();
+
+    const homeownerId = lead.userId || null;
+    const contractorId = lead.assigned_contractor_id || null;
+
+    let counterpartId = null;
+    if (userId === homeownerId) counterpartId = contractorId;
+    else if (userId === contractorId) counterpartId = homeownerId;
+    else throw { status: 403, message: 'You are not a party to this conversation.' };
+
+    return { lead, leadId, homeownerId, contractorId, counterpartId };
+}
+
 // ── MESSAGES: GET FOR A LEAD ──────────────────────────────────────────────────
 app.get('/api/messages/:leadId', requireAuth, async (req, res) => {
     try {
+        await resolveLeadParties(req.params.leadId, req.user.userId);
+
         const snap = await db.collection('messages')
             .where('lead_id', '==', req.params.leadId)
             .get();
@@ -301,6 +321,7 @@ app.get('/api/messages/:leadId', requireAuth, async (req, res) => {
         messages.sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
         res.json(messages);
     } catch (err) {
+        if (err.status) return res.status(err.status).json({ error: err.message });
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch messages.' });
     }
@@ -308,24 +329,41 @@ app.get('/api/messages/:leadId', requireAuth, async (req, res) => {
 
 // ── MESSAGES: SEND ────────────────────────────────────────────────────────────
 app.post('/api/messages', requireAuth, async (req, res) => {
-    const { lead_id, sender_id, receiver_id, body } = req.body;
-    if (!lead_id || !sender_id || !receiver_id || !body) {
-        return res.status(400).json({ error: 'lead_id, sender_id, receiver_id, and body are required.' });
-    }
-    if (req.user.userId !== sender_id) {
-        return res.status(403).json({ error: 'Forbidden: sender_id must match authenticated user.' });
+    const { lead_id, body } = req.body;
+    if (!lead_id || !body || !String(body).trim()) {
+        return res.status(400).json({ error: 'lead_id and body are required.' });
     }
     try {
+        const { counterpartId } = await resolveLeadParties(lead_id, req.user.userId);
+        if (!counterpartId) {
+            const role = req.user.role === 'contractor' ? 'homeowner' : 'contractor';
+            return res.status(409).json({ error: `No ${role} on the other side of this conversation yet.` });
+        }
         const msgRef = await db.collection('messages').add({
-            lead_id, sender_id, receiver_id, body,
+            lead_id,
+            sender_id: req.user.userId,
+            receiver_id: counterpartId,
+            body: String(body).trim(),
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
         res.status(201).json({ message: 'Message sent', messageId: msgRef.id });
     } catch (err) {
+        if (err.status) return res.status(err.status).json({ error: err.message });
         console.error(err);
         res.status(500).json({ error: 'Failed to send message.' });
     }
 });
+
+async function postSystemMessage(leadId, body) {
+    return db.collection('messages').add({
+        lead_id: leadId,
+        sender_id: 'system',
+        receiver_id: null,
+        body,
+        is_system: true,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+}
 
 async function getContractorName(contractorUserId) {
     const userDoc = await db.collection('users').doc(contractorUserId).get();
@@ -603,6 +641,75 @@ app.post('/api/quotes/:id/accept', requireAuth, async (req, res) => {
     }
 });
 
+// ── CONTRACTOR CONVERSATIONS ──────────────────────────────────────────────────
+// Every lead the authenticated contractor has touched: assigned to them OR they
+// have authored a quote on. Returned with last-message preview + unread count.
+app.get('/api/contractor/conversations', requireAuth, async (req, res) => {
+    if (req.user.role !== 'contractor') return res.status(403).json({ error: 'Forbidden' });
+    const me = req.user.userId;
+    try {
+        const [assignedSnap, quotedSnap] = await Promise.all([
+            db.collection('leads').where('assigned_contractor_id', '==', me).get(),
+            db.collection('quotes').where('contractor_user_id', '==', me).get()
+        ]);
+
+        const leadIds = new Set();
+        assignedSnap.docs.forEach(d => leadIds.add(d.id));
+        quotedSnap.docs.forEach(d => {
+            const lid = d.data().lead_id;
+            if (lid) leadIds.add(lid);
+        });
+        if (leadIds.size === 0) return res.json([]);
+
+        const leadDocs = await Promise.all(
+            [...leadIds].map(id => db.collection('leads').doc(id).get())
+        );
+
+        const conversations = await Promise.all(leadDocs
+            .filter(doc => doc.exists)
+            .map(async (doc) => {
+                const lead = doc.data();
+                const msgsSnap = await db.collection('messages')
+                    .where('lead_id', '==', doc.id)
+                    .get();
+                const msgs = msgsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                msgs.sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
+                const last = msgs[msgs.length - 1] || null;
+                const unread = msgs.filter(m => m.receiver_id === me && !m.read_at).length;
+
+                return {
+                    lead_id: doc.id,
+                    homeowner_user_id: lead.userId || null,
+                    customer_name: lead.name || null,
+                    customer_email: lead.email || null,
+                    project_title: lead.job_title || lead.service || 'Project',
+                    service: lead.service || null,
+                    status: lead.status || 'New',
+                    is_active_job: ['Matched', 'Scheduled', 'In Progress', 'Complete', 'Completed'].includes(lead.status),
+                    last_message: last ? {
+                        body: last.is_system ? null : last.body,
+                        preview: last.is_system ? '· system update ·' : last.body,
+                        sent_by_me: String(last.sender_id) === String(me),
+                        is_system: !!last.is_system,
+                        createdAt: last.createdAt || null
+                    } : null,
+                    unread_count: unread,
+                    updatedAt: last?.createdAt || lead.updatedAt || lead.createdAt || null
+                };
+            }));
+
+        conversations.sort((a, b) => {
+            const at = a.updatedAt?.toMillis?.() || 0;
+            const bt = b.updatedAt?.toMillis?.() || 0;
+            return bt - at;
+        });
+        res.json(conversations);
+    } catch (err) {
+        console.error('contractor conversations error:', err);
+        res.status(500).json({ error: 'Failed to fetch conversations.' });
+    }
+});
+
 // ── CLIENTS: LIST ─────────────────────────────────────────────────────────────
 app.get('/api/clients', requireAuth, async (req, res) => {
     const contractor_id = req.user.userId;
@@ -796,6 +903,169 @@ app.delete('/api/jobs/:id', requireAuth, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to delete job.' });
+    }
+});
+
+// ── APPOINTMENTS ──────────────────────────────────────────────────────────────
+// Site-visit / work appointments scheduled between a homeowner and a contractor
+// after a quote is accepted. Either party can read; homeowner proposes, contractor
+// confirms / declines / counter-proposes; either side can cancel.
+
+const APPT_STATUSES = ['proposed', 'confirmed', 'declined', 'cancelled'];
+const APPT_TYPES = ['site_visit', 'work'];
+
+function formatApptForMessage(scheduledAt) {
+    const d = new Date(scheduledAt);
+    if (Number.isNaN(d.getTime())) return scheduledAt;
+    return d.toLocaleString('en-US', {
+        weekday: 'short', month: 'short', day: 'numeric',
+        hour: 'numeric', minute: '2-digit'
+    });
+}
+
+// Create an appointment (homeowner proposes, contractor proposes counter)
+app.post('/api/appointments', requireAuth, async (req, res) => {
+    const { lead_id, scheduled_at, duration_minutes, type, notes } = req.body;
+    if (!lead_id || !scheduled_at) {
+        return res.status(400).json({ error: 'lead_id and scheduled_at are required.' });
+    }
+    const when = new Date(scheduled_at);
+    if (Number.isNaN(when.getTime())) {
+        return res.status(400).json({ error: 'scheduled_at is not a valid date.' });
+    }
+    if (when.getTime() < Date.now() - 5 * 60 * 1000) {
+        return res.status(400).json({ error: 'Pick a time in the future.' });
+    }
+    const apptType = APPT_TYPES.includes(type) ? type : 'site_visit';
+
+    try {
+        const { lead, homeownerId, contractorId } = await resolveLeadParties(lead_id, req.user.userId);
+        if (!homeownerId || !contractorId) {
+            return res.status(409).json({ error: 'This conversation is not yet matched to both parties.' });
+        }
+
+        // Find linked job (if any) for this contractor + lead
+        const jobSnap = await db.collection('jobs')
+            .where('contractor_user_id', '==', contractorId)
+            .where('lead_id', '==', lead_id)
+            .limit(1).get();
+        const jobId = jobSnap.empty ? null : jobSnap.docs[0].id;
+
+        const ref = await db.collection('appointments').add({
+            lead_id,
+            job_id: jobId,
+            contractor_user_id: contractorId,
+            homeowner_user_id: homeownerId,
+            proposed_by: req.user.userId,
+            proposer_role: req.user.role,
+            scheduled_at: admin.firestore.Timestamp.fromDate(when),
+            duration_minutes: Number(duration_minutes) > 0 ? Number(duration_minutes) : 60,
+            type: apptType,
+            status: 'proposed',
+            notes: notes ? String(notes).trim().slice(0, 500) : null,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        const proposerName = req.user.role === 'contractor'
+            ? (await getContractorName(req.user.userId)) || 'Contractor'
+            : (lead.name || 'Customer');
+        await postSystemMessage(lead_id,
+            `${proposerName} proposed a ${apptType === 'site_visit' ? 'site visit' : 'work session'} for ${formatApptForMessage(when)}.`);
+
+        res.status(201).json({ message: 'Appointment proposed', appointmentId: ref.id });
+    } catch (err) {
+        if (err.status) return res.status(err.status).json({ error: err.message });
+        console.error('create appointment error:', err);
+        res.status(500).json({ error: 'Failed to create appointment.' });
+    }
+});
+
+// List appointments — filter by lead_id (both parties) or by current user's role.
+app.get('/api/appointments', requireAuth, async (req, res) => {
+    const { lead_id } = req.query;
+    try {
+        let snap;
+        if (lead_id) {
+            await resolveLeadParties(lead_id, req.user.userId);
+            snap = await db.collection('appointments').where('lead_id', '==', lead_id).get();
+        } else if (req.user.role === 'contractor') {
+            snap = await db.collection('appointments').where('contractor_user_id', '==', req.user.userId).get();
+        } else {
+            snap = await db.collection('appointments').where('homeowner_user_id', '==', req.user.userId).get();
+        }
+        const appts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        appts.sort((a, b) => {
+            const at = a.scheduled_at?.toMillis?.() || 0;
+            const bt = b.scheduled_at?.toMillis?.() || 0;
+            return at - bt;
+        });
+        res.json(appts);
+    } catch (err) {
+        if (err.status) return res.status(err.status).json({ error: err.message });
+        console.error('list appointments error:', err);
+        res.status(500).json({ error: 'Failed to fetch appointments.' });
+    }
+});
+
+// Confirm / decline / cancel an appointment.
+app.patch('/api/appointments/:id', requireAuth, async (req, res) => {
+    const { status } = req.body;
+    if (!APPT_STATUSES.includes(status)) {
+        return res.status(400).json({ error: 'Invalid status.' });
+    }
+    try {
+        const ref = db.collection('appointments').doc(req.params.id);
+        const doc = await ref.get();
+        if (!doc.exists) return res.status(404).json({ error: 'Appointment not found.' });
+        const appt = doc.data();
+        const me = req.user.userId;
+        const isHomeowner = appt.homeowner_user_id === me;
+        const isContractor = appt.contractor_user_id === me;
+        if (!isHomeowner && !isContractor) return res.status(403).json({ error: 'Not authorized.' });
+
+        if (status === 'confirmed') {
+            // Only the receiving party can confirm (not the proposer).
+            if (appt.proposed_by === me) return res.status(403).json({ error: 'The other party must confirm this appointment.' });
+            if (appt.status !== 'proposed') return res.status(400).json({ error: 'Only proposed appointments can be confirmed.' });
+        }
+        if (status === 'declined') {
+            if (appt.proposed_by === me) return res.status(403).json({ error: 'You can cancel a proposal you made; only the other party can decline it.' });
+            if (appt.status !== 'proposed') return res.status(400).json({ error: 'Only proposed appointments can be declined.' });
+        }
+        if (status === 'cancelled' && !['proposed', 'confirmed'].includes(appt.status)) {
+            return res.status(400).json({ error: 'Already finalized.' });
+        }
+
+        await ref.update({
+            status,
+            decidedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Mirror confirmed site visits onto the job: stage = Scheduled, due_date = scheduled_at.
+        if (status === 'confirmed' && appt.job_id) {
+            const when = appt.scheduled_at?.toDate?.() || null;
+            const jobUpdate = { stage: 'Scheduled', updatedAt: admin.firestore.FieldValue.serverTimestamp() };
+            if (when) jobUpdate.due_date = admin.firestore.Timestamp.fromDate(when);
+            await db.collection('jobs').doc(appt.job_id).update(jobUpdate);
+            if (appt.lead_id) {
+                await db.collection('leads').doc(appt.lead_id).update({
+                    status: 'Scheduled',
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+            }
+        }
+
+        const when = appt.scheduled_at?.toDate?.() || null;
+        const whenStr = when ? formatApptForMessage(when) : '(time TBD)';
+        const verb = status === 'confirmed' ? 'confirmed' : status === 'declined' ? 'declined' : 'cancelled';
+        await postSystemMessage(appt.lead_id, `Visit ${verb} for ${whenStr}.`);
+
+        res.json({ message: 'Appointment updated' });
+    } catch (err) {
+        console.error('update appointment error:', err);
+        res.status(500).json({ error: 'Failed to update appointment.' });
     }
 });
 
