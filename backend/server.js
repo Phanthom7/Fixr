@@ -60,15 +60,18 @@ try {
     process.exit(1);
 }
  
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET
-});
+const firebaseConfig = { credential: admin.credential.cert(serviceAccount) };
+if (process.env.FIREBASE_STORAGE_BUCKET) {
+    firebaseConfig.storageBucket = process.env.FIREBASE_STORAGE_BUCKET;
+}
+admin.initializeApp(firebaseConfig);
 
 
 const db = admin.firestore();
 // FIREBASE_STORAGE_BUCKET format: '<your-project-id>.appspot.com'
-const bucket = admin.storage().bucket(process.env.FIREBASE_STORAGE_BUCKET);
+const bucket = process.env.FIREBASE_STORAGE_BUCKET
+    ? admin.storage().bucket(process.env.FIREBASE_STORAGE_BUCKET)
+    : null;
 
 const app  = express();
 const port = process.env.PORT || 3000;
@@ -1174,6 +1177,9 @@ const ALLOWED_IMAGE_MIMES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'im
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 
 app.post('/api/upload-photo', requireAuth, (req, res) => {
+    if (!bucket) {
+        return res.status(503).json({ error: 'Photo upload is not configured yet.' });
+    }
     let busboy;
     try {
         busboy = Busboy({ headers: req.headers, limits: { fileSize: MAX_PHOTO_BYTES, files: 1 } });
